@@ -3,128 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOXL Yahoo Auto-Helper</title>
+    <title>SOXL Strategy Manager</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --bg: #f4f7f6;
-            --card: #ffffff;
-            --primary: #448aff;
-            --buy: #ff5252;
-            --sell: #4caf50;
-        }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 420px; }
-        .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .title { font-size: 1.1rem; font-weight: bold; color: #555; margin-bottom: 15px; text-align: center; }
-        .price-box { text-align: center; margin-bottom: 20px; }
-        .current-price { font-size: 3rem; font-weight: 800; color: var(--primary); }
-        .strategy { display: flex; flex-direction: column; gap: 12px; }
-        .item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fafafa; border-radius: 12px; border-left: 6px solid #ddd; }
-        .item.buy { border-left-color: var(--buy); }
-        .item.sell { border-left-color: var(--sell); }
-        .item-label { font-size: 0.9rem; color: #666; font-weight: 600; }
-        .item-val { font-size: 1.2rem; font-weight: bold; font-family: monospace; }
-        .loading { color: #aaa; font-style: italic; font-size: 0.8rem; text-align: center; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 10px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        :root { --primary: #448aff; --buy: #ef5350; --sell: #66bb6a; --bg: #f8f9fa; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 450px; }
+        .card { background: #fff; padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; }
+        .title { font-size: 1rem; font-weight: bold; color: #444; margin-bottom: 12px; display: flex; justify-content: space-between; }
+        
+        /* 실시간 가격 */
+        .price-hero { text-align: center; padding: 10px 0; }
+        .price-hero h1 { font-size: 2.8rem; margin: 5px 0; color: var(--primary); }
+        
+        /* 보유 현황 섹션 */
+        .holdings-input { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; }
+        .save-btn { background: #333; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; grid-column: span 2; }
+
+        /* 결과 박스 */
+        .strategy-list { display: flex; flex-direction: column; gap: 8px; }
+        .s-item { display: flex; justify-content: space-between; padding: 12px; background: #f1f3f5; border-radius: 10px; border-left: 5px solid #ccc; }
+        .s-item.buy { border-left-color: var(--buy); }
+        .s-item.sell { border-left-color: var(--sell); }
+        .s-label { font-size: 0.85rem; color: #666; }
+        .s-val { font-weight: bold; font-family: monospace; }
+
+        .summary-box { background: #eef5ff; padding: 12px; border-radius: 10px; margin-top: 10px; font-size: 0.9rem; }
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; color: white; margin-left: 5px; }
+        .bg-red { background: var(--buy); } .bg-green { background: var(--sell); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <div class="title">SOXL 실시간 종가 (Yahoo Finance)</div>
-        <div id="loader" class="loading">야후에서 데이터 가져오는 중...</div>
-        <div class="price-box">
-            <div id="mainPrice" class="current-price">$ --.--</div>
-        </div>
-        <button onclick="getYahooData()">가격 새로고침</button>
-    </div>
-
-    <div class="strategy">
-        <div class="item buy">
-            <span class="item-label">1. 종가 LOC 매수</span>
-            <span id="v1" class="item-val">$ --.--</span>
-        </div>
-        <div class="item sell">
-            <span class="item-label">2. 체결가 +5% 매도</span>
-            <span id="v2" class="item-val">$ --.--</span>
-        </div>
-        <div class="item buy">
-            <span class="item-label">3. 종가 -8% 추매</span>
-            <span id="v3" class="item-val">$ --.--</span>
+        <div class="title">📈 SOXL 현재가 <span id="time" style="font-weight:normal; font-size:0.7rem; color:#999;"></span></div>
+        <div class="price-hero">
+            <h1 id="currPrice">$ --.--</h1>
+            <button onclick="getYahooData()" style="background:none; border:1px solid #ddd; border-radius:15px; padding:4px 12px; font-size:0.7rem; cursor:pointer;">데이터 새로고침</button>
         </div>
     </div>
 
-    <div class="card" style="margin-top:20px;">
-        <canvas id="myChart"></canvas>
+    <div class="card">
+        <div class="title">📁 나의 매수 잔고</div>
+        <div class="holdings-input">
+            <input type="number" id="myAvg" step="0.01" placeholder="평단가 ($)">
+            <input type="number" id="myQty" placeholder="보유 수량">
+            <button class="save-btn" onclick="saveHoldings()">잔고 정보 업데이트</button>
+        </div>
+        <div id="holdingsDisplay" class="summary-box" style="display:none;">
+            현재 <b><span id="dispQty">0</span>주</b> 보유 중 (평단 <b>$<span id="dispAvg">0</span></b>)
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="title">🚀 오늘의 주문 가이드</div>
+        <div class="strategy-list">
+            <div class="s-item buy">
+                <span class="s-label">1. 종가 LOC 매수 <span class="badge bg-red">신규</span></span>
+                <span id="target1" class="s-val">$ --.--</span>
+            </div>
+            <div class="s-item sell">
+                <span class="s-label">2. 기존 평단+5% 매도 <span class="badge bg-green">익절</span></span>
+                <span id="target2" class="s-val">$ --.--</span>
+            </div>
+            <div class="s-item buy">
+                <span class="s-label">3. 종가 -8% LOC 매수 <span class="badge bg-red">추매</span></span>
+                <span id="target3" class="s-val">$ --.--</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <canvas id="strategyChart"></canvas>
     </div>
 </div>
 
 <script>
     let chart = null;
 
-    async function getYahooData() {
-        const symbol = 'SOXL';
-        const loader = document.getElementById('loader');
-        loader.innerText = "야후 데이터 동기화 중...";
+    // 데이터 로드
+    window.onload = function() {
+        const savedAvg = localStorage.getItem('soxl_avg');
+        const savedQty = localStorage.getItem('soxl_qty');
+        if(savedAvg) document.getElementById('myAvg').value = savedAvg;
+        if(savedQty) document.getElementById('myQty').value = savedQty;
+        updateHoldingsUI();
+        getYahooData();
+    };
 
-        try {
-            // CORS 우회를 위해 AllOrigins 프록시 사용 (별도 키 불필요)
-            const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`)}`;
-            
-            const response = await fetch(url);
-            const data = await response.json();
-            const contents = JSON.parse(data.contents);
-            
-            const price = contents.chart.result[0].meta.regularMarketPrice;
-            const prevClose = contents.chart.result[0].meta.previousClose;
-            
-            // 장 중에는 실시간가, 아침에 확인하실 땐 전일 종가 기반으로 작동
-            updateUI(price);
-            loader.innerText = `업데이트 완료: ${new Date().toLocaleTimeString()}`;
-        } catch (e) {
-            loader.innerText = "데이터 로드 실패. 다시 시도해주세요.";
-            console.error(e);
+    function saveHoldings() {
+        localStorage.setItem('soxl_avg', document.getElementById('myAvg').value);
+        localStorage.setItem('soxl_qty', document.getElementById('myQty').value);
+        updateHoldingsUI();
+        getYahooData(); // 가격 다시 계산
+        alert("잔고가 저장되었습니다.");
+    }
+
+    function updateHoldingsUI() {
+        const avg = localStorage.getItem('soxl_avg');
+        const qty = localStorage.getItem('soxl_qty');
+        if(avg && qty && qty > 0) {
+            document.getElementById('holdingsDisplay').style.display = 'block';
+            document.getElementById('dispAvg').innerText = avg;
+            document.getElementById('dispQty').innerText = qty;
+        } else {
+            document.getElementById('holdingsDisplay').style.display = 'none';
         }
     }
 
-    function updateUI(price) {
+    async function getYahooData() {
+        try {
+            const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/SOXL?interval=1d&range=1d`)}`;
+            const resp = await fetch(url);
+            const json = await resp.json();
+            const data = JSON.parse(json.contents);
+            const price = data.chart.result[0].meta.regularMarketPrice;
+            
+            calculateStrategy(price);
+            document.getElementById('time').innerText = new Date().toLocaleTimeString();
+        } catch (e) { console.error("Data Fetch Error"); }
+    }
+
+    function calculateStrategy(price) {
         const p = parseFloat(price);
+        const myAvg = parseFloat(localStorage.getItem('soxl_avg')) || p;
+
         const s1 = p.toFixed(2);
-        const s2 = (p * 1.05).toFixed(2);
+        const s2 = (myAvg * 1.05).toFixed(2); // 기준을 '내 평단'으로 변경 가능
         const s3 = (p * 0.92).toFixed(2);
 
-        document.getElementById('mainPrice').innerText = `$ ${s1}`;
-        document.getElementById('v1').innerText = `$ ${s1}`;
-        document.getElementById('v2').innerText = `$ ${s2}`;
-        document.getElementById('v3').innerText = `$ ${s3}`;
+        document.getElementById('currPrice').innerText = `$ ${s1}`;
+        document.getElementById('target1').innerText = `$ ${s1}`;
+        document.getElementById('target2').innerText = `$ ${s2}`;
+        document.getElementById('target3').innerText = `$ ${s3}`;
 
         renderChart(p, s1, s2, s3);
     }
 
-    function renderChart(base, s1, s2, s3) {
-        const ctx = document.getElementById('myChart').getContext('2d');
+    function renderChart(p, s1, s2, s3) {
+        const ctx = document.getElementById('strategyChart').getContext('2d');
         if (chart) chart.destroy();
         chart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['종가매수', '5%익절', '-8%추매'],
+                labels: ['종가매수', '내평단+5%', '-8%추매'],
                 datasets: [{
+                    label: '가격($)',
                     data: [s1, s2, s3],
-                    backgroundColor: ['#448aff', '#4caf50', '#ff5252'],
-                    borderRadius: 8
+                    backgroundColor: ['#448aff', '#66bb6a', '#ef5350']
                 }]
             },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: false, suggestedMin: s3 * 0.98 } }
-            }
+            options: { responsive: true, scales: { y: { beginAtZero: false } } }
         });
     }
-
-    window.onload = getYahooData;
 </script>
 </body>
 </html>
