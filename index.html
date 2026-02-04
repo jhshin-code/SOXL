@@ -3,116 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOXL Strategy Manager</title>
+    <title>SOXL 전략 매니저</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #448aff; --buy: #ef5350; --sell: #66bb6a; --bg: #f8f9fa; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 450px; }
+        .container { width: 100%; max-width: 480px; }
         .card { background: #fff; padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; }
-        .title { font-size: 1rem; font-weight: bold; color: #444; margin-bottom: 12px; display: flex; justify-content: space-between; }
+        .price-display { text-align: center; font-size: 2.2rem; font-weight: 800; color: var(--primary); margin: 10px 0; }
         
-        /* 실시간 가격 */
-        .price-hero { text-align: center; padding: 10px 0; }
-        .price-hero h1 { font-size: 2.8rem; margin: 5px 0; color: var(--primary); }
+        /* 입력 섹션 */
+        .input-group { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-top: 10px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; width: 100%; box-sizing: border-box; }
+        .add-btn { background: var(--primary); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        /* 매수 목록 스타일 */
+        .trade-list { display: flex; flex-direction: column; gap: 10px; }
+        .trade-item { 
+            background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.2s;
+        }
+        .trade-info { display: flex; flex-direction: column; }
+        .trade-date { font-size: 0.75rem; color: #999; }
+        .trade-main { font-weight: bold; font-size: 1rem; margin: 3px 0; color: #333; }
+        .sell-guide { font-size: 0.9rem; color: var(--sell); font-weight: bold; background: #f0fff0; padding: 2px 6px; border-radius: 4px; display: inline-block; width: fit-content; }
         
-        /* 보유 현황 섹션 */
-        .holdings-input { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; }
-        .save-btn { background: #333; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; grid-column: span 2; }
+        /* 체크박스 디자인 */
+        .check-container { display: flex; align-items: center; justify-content: center; padding-left: 10px; }
+        .check-btn { 
+            width: 30px; height: 30px; border-radius: 50%; border: 2px solid #ddd; 
+            background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 1.2rem;
+        }
+        .check-btn.done { background: var(--sell); border-color: var(--sell); }
 
-        /* 결과 박스 */
-        .strategy-list { display: flex; flex-direction: column; gap: 8px; }
-        .s-item { display: flex; justify-content: space-between; padding: 12px; background: #f1f3f5; border-radius: 10px; border-left: 5px solid #ccc; }
-        .s-item.buy { border-left-color: var(--buy); }
-        .s-item.sell { border-left-color: var(--sell); }
-        .s-label { font-size: 0.85rem; color: #666; }
-        .s-val { font-weight: bold; font-family: monospace; }
-
-        .summary-box { background: #eef5ff; padding: 12px; border-radius: 10px; margin-top: 10px; font-size: 0.9rem; }
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; color: white; margin-left: 5px; }
-        .bg-red { background: var(--buy); } .bg-green { background: var(--sell); }
+        .empty-msg { text-align: center; color: #bbb; padding: 30px; font-size: 0.9rem; }
+        .summary { font-size: 0.85rem; color: #666; margin-bottom: 5px; padding-left: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <div class="title">📈 SOXL 현재가 <span id="time" style="font-weight:normal; font-size:0.7rem; color:#999;"></span></div>
-        <div class="price-hero">
-            <h1 id="currPrice">$ --.--</h1>
-            <button onclick="getYahooData()" style="background:none; border:1px solid #ddd; border-radius:15px; padding:4px 12px; font-size:0.7rem; cursor:pointer;">데이터 새로고침</button>
+        <div style="text-align:center; font-size:0.8rem; color:#666;">SOXL 현재가(종가)</div>
+        <div id="currPrice" class="price-display">$ --.--</div>
+        <div style="display: flex; justify-content: space-around; font-size: 0.85rem;">
+            <div style="text-align:center"><span>LOC 매수</span><br><b id="guide1" style="color:var(--buy)">$ --.--</b></div>
+            <div style="text-align:center"><span>-8% 추매</span><br><b id="guide3" style="color:var(--buy)">$ --.--</b></div>
         </div>
     </div>
 
     <div class="card">
-        <div class="title">📁 나의 매수 잔고</div>
-        <div class="holdings-input">
-            <input type="number" id="myAvg" step="0.01" placeholder="평단가 ($)">
-            <input type="number" id="myQty" placeholder="보유 수량">
-            <button class="save-btn" onclick="saveHoldings()">잔고 정보 업데이트</button>
-        </div>
-        <div id="holdingsDisplay" class="summary-box" style="display:none;">
-            현재 <b><span id="dispQty">0</span>주</b> 보유 중 (평단 <b>$<span id="dispAvg">0</span></b>)
+        <div style="font-weight:bold; margin-bottom:10px; font-size:0.95rem;">➕ 매수 체결 기록</div>
+        <div class="input-group">
+            <input type="number" id="inPrice" step="0.01" placeholder="매수가($)">
+            <input type="number" id="inQty" placeholder="수량">
+            <button class="add-btn" onclick="addTrade()">추가</button>
         </div>
     </div>
 
-    <div class="card">
-        <div class="title">🚀 오늘의 주문 가이드</div>
-        <div class="strategy-list">
-            <div class="s-item buy">
-                <span class="s-label">1. 종가 LOC 매수 <span class="badge bg-red">신규</span></span>
-                <span id="target1" class="s-val">$ --.--</span>
-            </div>
-            <div class="s-item sell">
-                <span class="s-label">2. 기존 평단+5% 매도 <span class="badge bg-green">익절</span></span>
-                <span id="target2" class="s-val">$ --.--</span>
-            </div>
-            <div class="s-item buy">
-                <span class="s-label">3. 종가 -8% LOC 매수 <span class="badge bg-red">추매</span></span>
-                <span id="target3" class="s-val">$ --.--</span>
-            </div>
+    <div class="summary">📜 미매도 항목 (<span id="count">0</span>건)</div>
+    <div id="tradeList" class="trade-list">
         </div>
-    </div>
-
-    <div class="card">
-        <canvas id="strategyChart"></canvas>
-    </div>
 </div>
 
 <script>
-    let chart = null;
+    // 로컬 스토리지에서 데이터 불러오기
+    let trades = JSON.parse(localStorage.getItem('soxl_trades_list') || '[]');
 
-    // 데이터 로드
     window.onload = function() {
-        const savedAvg = localStorage.getItem('soxl_avg');
-        const savedQty = localStorage.getItem('soxl_qty');
-        if(savedAvg) document.getElementById('myAvg').value = savedAvg;
-        if(savedQty) document.getElementById('myQty').value = savedQty;
-        updateHoldingsUI();
+        renderTrades();
         getYahooData();
     };
 
-    function saveHoldings() {
-        localStorage.setItem('soxl_avg', document.getElementById('myAvg').value);
-        localStorage.setItem('soxl_qty', document.getElementById('myQty').value);
-        updateHoldingsUI();
-        getYahooData(); // 가격 다시 계산
-        alert("잔고가 저장되었습니다.");
-    }
-
-    function updateHoldingsUI() {
-        const avg = localStorage.getItem('soxl_avg');
-        const qty = localStorage.getItem('soxl_qty');
-        if(avg && qty && qty > 0) {
-            document.getElementById('holdingsDisplay').style.display = 'block';
-            document.getElementById('dispAvg').innerText = avg;
-            document.getElementById('dispQty').innerText = qty;
-        } else {
-            document.getElementById('holdingsDisplay').style.display = 'none';
-        }
-    }
-
+    // 야후 파이낸스 데이터 가져오기
     async function getYahooData() {
         try {
             const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/SOXL?interval=1d&range=1d`)}`;
@@ -121,41 +86,78 @@
             const data = JSON.parse(json.contents);
             const price = data.chart.result[0].meta.regularMarketPrice;
             
-            calculateStrategy(price);
-            document.getElementById('time').innerText = new Date().toLocaleTimeString();
-        } catch (e) { console.error("Data Fetch Error"); }
+            document.getElementById('currPrice').innerText = `$ ${price.toFixed(2)}`;
+            document.getElementById('guide1').innerText = `$ ${price.toFixed(2)}`;
+            document.getElementById('guide3').innerText = `$ ${(price * 0.92).toFixed(2)}`;
+        } catch (e) {
+            console.error("가격 로드 실패");
+        }
     }
 
-    function calculateStrategy(price) {
-        const p = parseFloat(price);
-        const myAvg = parseFloat(localStorage.getItem('soxl_avg')) || p;
+    // 항목 추가
+    function addTrade() {
+        const p = document.getElementById('inPrice').value;
+        const q = document.getElementById('inQty').value;
+        if(!p || !q) return alert("매수가와 수량을 모두 입력해주세요.");
 
-        const s1 = p.toFixed(2);
-        const s2 = (myAvg * 1.05).toFixed(2); // 기준을 '내 평단'으로 변경 가능
-        const s3 = (p * 0.92).toFixed(2);
+        const newTrade = {
+            id: Date.now(),
+            date: new Date().toLocaleDateString(),
+            price: parseFloat(p).toFixed(2),
+            qty: q,
+            target: (parseFloat(p) * 1.05).toFixed(2)
+        };
 
-        document.getElementById('currPrice').innerText = `$ ${s1}`;
-        document.getElementById('target1').innerText = `$ ${s1}`;
-        document.getElementById('target2').innerText = `$ ${s2}`;
-        document.getElementById('target3').innerText = `$ ${s3}`;
-
-        renderChart(p, s1, s2, s3);
+        trades.push(newTrade);
+        saveAndRender();
+        
+        // 입력창 초기화
+        document.getElementById('inPrice').value = '';
+        document.getElementById('inQty').value = '';
     }
 
-    function renderChart(p, s1, s2, s3) {
-        const ctx = document.getElementById('strategyChart').getContext('2d');
-        if (chart) chart.destroy();
-        chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['종가매수', '내평단+5%', '-8%추매'],
-                datasets: [{
-                    label: '가격($)',
-                    data: [s1, s2, s3],
-                    backgroundColor: ['#448aff', '#66bb6a', '#ef5350']
-                }]
-            },
-            options: { responsive: true, scales: { y: { beginAtZero: false } } }
+    // 항목 삭제 (체크박스 클릭 시)
+    function removeTrade(id) {
+        // 모바일 사용성을 위해 즉시 삭제 전 확인 창
+        if(confirm("이 항목을 매도 완료 처리하고 삭제하시겠습니까?")) {
+            trades = trades.filter(t => t.id !== id);
+            saveAndRender();
+        }
+    }
+
+    function saveAndRender() {
+        localStorage.setItem('soxl_trades_list', JSON.stringify(trades));
+        renderTrades();
+    }
+
+    // 리스트 화면에 그리기
+    function renderTrades() {
+        const container = document.getElementById('tradeList');
+        const countSpan = document.getElementById('count');
+        
+        countSpan.innerText = trades.length;
+        container.innerHTML = '';
+
+        if (trades.length === 0) {
+            container.innerHTML = '<div class="empty-msg">아직 기록된 매수 항목이 없습니다.</div>';
+            return;
+        }
+
+        // 최신순으로 정렬하여 표시
+        [...trades].reverse().forEach(t => {
+            const div = document.createElement('div');
+            div.className = 'trade-item';
+            div.innerHTML = `
+                <div class="trade-info">
+                    <span class="trade-date">${t.date} 체결</span>
+                    <span class="trade-main">$${t.price} / ${t.qty}주</span>
+                    <span class="sell-guide">목표 매도: $${t.target} (LOC)</span>
+                </div>
+                <div class="check-container">
+                    <button class="check-btn" onclick="removeTrade(${t.id})" title="매도 완료">✓</button>
+                </div>
+            `;
+            container.appendChild(div);
         });
     }
 </script>
