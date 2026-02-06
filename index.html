@@ -191,21 +191,22 @@
                 throw new Error('데이터 부족');
             }
 
-            // 최대 하락률 계산 (각 고점 대비)
-            const drawdowns = [];
-            let peak = closes[0];
+            // 일일 하락률 계산 (전날 종가 대비)
+            const dailyDrops = [];
             
             for (let i = 1; i < closes.length; i++) {
-                if (closes[i] > peak) {
-                    peak = closes[i];
-                } else {
-                    const drawdown = ((peak - closes[i]) / peak) * 100;
-                    if (drawdown > 0) drawdowns.push(drawdown);
+                const prevClose = closes[i - 1];
+                const currClose = closes[i];
+                const dailyChange = ((currClose - prevClose) / prevClose) * 100;
+                
+                // 하락한 날만 (음수 변화율)
+                if (dailyChange < 0) {
+                    dailyDrops.push(Math.abs(dailyChange));
                 }
             }
             
-            // 상위 10개 하락률 평균
-            const top10 = drawdowns.sort((a, b) => b - a).slice(0, 10);
+            // 상위 10개 일일 하락률 평균
+            const top10 = dailyDrops.sort((a, b) => b - a).slice(0, 10);
             const avgDrawdown = top10.reduce((a, b) => a + b, 0) / top10.length;
             
             // 캐시 저장
@@ -217,7 +218,7 @@
             // UI 업데이트
             g3.innerText = `$${(currentPrice * (1 - avgDrawdown / 100)).toFixed(2)}`;
             drawdownLabel.innerText = `${avgDrawdown.toFixed(1)}% 하락시 추매`;
-            drawdownInfo.innerText = `1년 평균 하락률 기반`;
+            drawdownInfo.innerText = `1년 일일 최대 하락 평균`;
             
         } catch (e) {
             console.error('하락률 계산 실패:', e);
