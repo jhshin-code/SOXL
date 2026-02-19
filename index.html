@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>스마트 매도 매니저</title>
+    <title>스마트 매도 매니저 (Fixed)</title>
     <style>
         :root { --primary: #007bff; --buy: #ff4d4d; --sell: #2ecc71; --bg: #f2f4f7; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; }
         .container { width: 100%; max-width: 450px; margin: 0 auto; }
         .card { background: #fff; padding: 18px; border-radius: 18px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
         
-        /* 티커 선택 */
         .ticker-selector { display: flex; gap: 8px; margin-bottom: 15px; }
         .ticker-btn { flex: 1; padding: 10px; border: 2px solid #eee; border-radius: 10px; background: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .ticker-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
@@ -18,11 +17,9 @@
         .custom-ticker input { flex: 1; padding: 10px; border: 2px solid #eee; border-radius: 10px; font-size: 0.9rem; text-transform: uppercase; }
         .custom-ticker button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-        /* 상단 시세 박스 */
         .ticker-display { text-align: center; font-size: 1.2rem; font-weight: bold; color: #666; margin-bottom: 5px; }
         .price-main { font-size: 2.8rem; font-weight: 800; color: var(--primary); text-align: center; margin: 5px 0; }
         
-        /* 추매 가이드 - 2개 나란히 */
         .guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; border-top: 1px dashed #eee; padding-top: 15px; }
         .guide-item { 
             text-align: center; 
@@ -36,7 +33,6 @@
         .guide-price { font-weight: bold; font-size: 1.2rem; color: #2ecc71; }
         .guide-info { font-size: 0.6rem; color: #999; margin-top: 4px; }
 
-        /* 종가 매수 박스 */
         .current-price-box {
             text-align: center;
             padding: 10px;
@@ -47,13 +43,11 @@
         .current-price-box .label { font-size: 0.75rem; color: #888; }
         .current-price-box .value { font-size: 1.1rem; font-weight: bold; color: var(--primary); margin-top: 4px; }
 
-        /* 입력 영역 */
         .input-row { display: grid; grid-template-columns: 1.2fr 1fr 60px; gap: 8px; margin-top: 10px; }
         input[type="number"] { padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 1rem; width: 100%; box-sizing: border-box; outline: none; }
         input:focus { border-color: var(--primary); }
         .add-btn { background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
         
-        /* 리스트 항목 */
         .trade-item { background: white; padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border: 1px solid #eee; position: relative; overflow: hidden; }
         .trade-item::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--sell); }
         .item-info { display: flex; flex-direction: column; gap: 4px; }
@@ -88,9 +82,7 @@
         <div style="text-align:center; font-size:0.8rem; color:#888;">실시간 시세</div>
         <div id="price" class="price-main">--.--</div>
         
-        <!-- 추매 가이드 2개 -->
         <div class="guide-grid">
-            <!-- 고정 8% 하락 -->
             <div class="guide-item">
                 <div class="guide-label">📍 고정 전략</div>
                 <div class="guide-percent">-8.0% 하락시</div>
@@ -98,7 +90,6 @@
                 <div class="guide-info">기본 추매가</div>
             </div>
             
-            <!-- 1년 TOP 30 평균 -->
             <div class="guide-item" id="dynamicGuide">
                 <div class="guide-label">📊 동적 전략</div>
                 <div class="guide-percent" id="dynamicPercent">계산중...</div>
@@ -107,7 +98,6 @@
             </div>
         </div>
 
-        <!-- 종가 매수 -->
         <div class="current-price-box">
             <div class="label">💰 오늘 종가 매수</div>
             <div class="value" id="currentBuy">$--.--</div>
@@ -131,17 +121,10 @@
 
 <script>
     let currentTicker = 'SOXL';
-    let drawdownCache = {}; // 티커별 하락률 캐시
-    
-    function getAllItems() {
-        return JSON.parse(localStorage.getItem('multi_ticker_trades') || '{}');
-    }
-    
-    function getCurrentItems() {
-        const all = getAllItems();
-        return all[currentTicker] || [];
-    }
-    
+    let drawdownCache = {}; 
+
+    function getAllItems() { return JSON.parse(localStorage.getItem('multi_ticker_trades') || '{}'); }
+    function getCurrentItems() { return getAllItems()[currentTicker] || []; }
     function saveCurrentItems(items) {
         const all = getAllItems();
         all[currentTicker] = items;
@@ -162,7 +145,6 @@
         const input = document.getElementById('customTicker');
         const ticker = input.value.trim().toUpperCase();
         if (!ticker) return alert('티커를 입력하세요.');
-        
         currentTicker = ticker;
         document.querySelectorAll('.ticker-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById('tickerDisplay').innerText = ticker;
@@ -170,93 +152,85 @@
         render();
     }
 
+    // ★★★ 핵심 수정 부분: 프록시 변경 및 에러 처리 강화 ★★★
     async function fetchStockPrice() {
         const pEl = document.getElementById('price');
         const sEl = document.getElementById('status');
         sEl.innerText = "업데이트 중...";
 
         try {
-            const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1d`)}`);
-            const json = await response.json();
-            const data = JSON.parse(json.contents);
+            // 야후 API URL
+            const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1d`;
+            
+            // 프록시를 allorigins -> codetabs 로 변경 (야후 차단 우회에 유리)
+            const response = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
+            
+            if (!response.ok) throw new Error('네트워크 응답 오류');
+
+            const data = await response.json(); // codetabs는 raw JSON을 바로 줍니다. (contents 파싱 불필요)
+            
+            // 데이터 구조 확인
+            if (!data.chart || !data.chart.result) throw new Error('데이터 형식 오류');
+
             const val = data.chart.result[0].meta.regularMarketPrice;
 
             pEl.innerText = `$${val.toFixed(2)}`;
-            
-            // 고정 8% 하락가
             document.getElementById('fixed8').innerText = `$${(val * 0.92).toFixed(2)}`;
-            
-            // 종가 매수
             document.getElementById('currentBuy').innerText = `$${val.toFixed(2)}`;
             
-            // 동적 하락률 계산 (백그라운드)
             calculateDrawdown(val);
             
             sEl.innerText = "최종 업데이트: " + new Date().toLocaleTimeString();
         } catch (e) {
-            sEl.innerText = "데이터 로드 실패. 다시 시도해 주세요.";
             console.error(e);
+            sEl.innerText = "데이터 로드 실패 (잠시 후 다시 시도)";
+            // 실패 시 UI가 깨지지 않도록 '---' 표시
+            pEl.innerText = "Error";
         }
     }
 
+    // ★★★ 핵심 수정 부분: 하락률 계산도 동일한 프록시 적용 ★★★
     async function calculateDrawdown(currentPrice) {
         const dynamicGuide = document.getElementById('dynamicGuide');
         const dynamicPercent = document.getElementById('dynamicPercent');
         const dynamic30 = document.getElementById('dynamic30');
         
         dynamicGuide.classList.add('loading');
-        dynamicPercent.innerText = '계산중...';
         
         try {
-            // 캐시 확인 (1시간 유효)
             const cached = drawdownCache[currentTicker];
             if (cached && (Date.now() - cached.timestamp < 3600000)) {
                 updateDynamicUI(cached.avg30, currentPrice);
                 return;
             }
 
-            // 1년 일봉 데이터 가져오기
-            const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1y`)}`);
-            const json = await response.json();
-            const data = JSON.parse(json.contents);
+            const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1y`;
+            const response = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
+            const data = await response.json();
             
             const quotes = data.chart.result[0].indicators.quote[0];
             const closes = quotes.close.filter(c => c !== null);
             
-            if (closes.length < 30) {
-                throw new Error('데이터 부족');
-            }
+            if (closes.length < 30) throw new Error('데이터 부족');
 
-            // 일일 하락률 계산
             const dailyDrops = [];
-            
             for (let i = 1; i < closes.length; i++) {
                 const prevClose = closes[i - 1];
                 const currClose = closes[i];
                 const dailyChange = ((currClose - prevClose) / prevClose) * 100;
-                
-                if (dailyChange < 0) {
-                    dailyDrops.push(Math.abs(dailyChange));
-                }
+                if (dailyChange < 0) dailyDrops.push(Math.abs(dailyChange));
             }
             
-            // 상위 30개 평균
             dailyDrops.sort((a, b) => b - a);
             const top30 = dailyDrops.slice(0, 30);
             const avg30 = top30.length > 0 ? top30.reduce((a, b) => a + b, 0) / top30.length : 8.0;
             
-            // 캐시 저장
-            drawdownCache[currentTicker] = {
-                avg30: avg30,
-                timestamp: Date.now()
-            };
-            
+            drawdownCache[currentTicker] = { avg30: avg30, timestamp: Date.now() };
             updateDynamicUI(avg30, currentPrice);
             
         } catch (e) {
             console.error('하락률 계산 실패:', e);
-            // 실패시 8% 기본값 사용
-            updateDynamicUI(8.0, currentPrice);
+            updateDynamicUI(8.0, currentPrice); // 실패 시 기본 8% 적용
         }
     }
 
