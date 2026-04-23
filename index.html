@@ -411,49 +411,75 @@ body {
 
   <!-- ═══════════════ TAB 2: 10% 전략 ═══════════════ -->
   <div class="tab-panel" id="tab-daily">
-    <div class="card">
-      <div class="card-title">🔥 매일 매수 → 10% 익절 전략</div>
 
-      <div class="logic-explain">
-        <p>
-          <strong>전략 로직:</strong><br>
-          매일 장 마감 시 <strong>일정 금액을 매수</strong>하고,<br>
-          다음날 주가가 <strong>전일 매수가 대비 +10% 상승</strong>하면 전량 매도합니다.<br>
-          매도가 안 되면 해당 포지션을 계속 보유하며 추가 매수를 반복합니다.<br><br>
-          <strong>리스크:</strong> 레버리지 ETF 특성상 하락 지속 시 손실 누적 주의.
-        </p>
-      </div>
+    <!-- 전략 설명 -->
+    <div class="logic-explain" style="margin-bottom:12px;">
+      <p>
+        <strong>전략 로직:</strong><br>
+        매일 전날 종가로 <strong>LOC 매수</strong>를 반복합니다.<br>
+        매도 조건은 개별 매수가가 아닌 <strong>전체 보유 포지션의 평균단가 대비 +10%</strong> 도달 시
+        <strong>LOC 전량 매도</strong>합니다.<br><br>
+        <strong>리스크:</strong> 하락 지속 시 평단 낮아지나 손실 누적 주의.
+      </p>
+    </div>
 
-      <div class="daily-info-grid" style="margin-bottom:12px;">
+    <!-- 현재가 + 평단 대시보드 -->
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">포지션 현황 — <span id="daily-ticker-label" style="color:var(--yellow);">SOXL</span></div>
+
+      <div class="daily-info-grid" style="margin-bottom:10px;">
         <div class="info-box">
           <div class="info-box-label">현재 시세</div>
           <div class="info-box-val accent" id="daily-current-price">$--</div>
         </div>
         <div class="info-box">
-          <div class="info-box-label">10% 익절 목표</div>
-          <div class="info-box-val green" id="daily-target">$--</div>
+          <div class="info-box-label">전체 평균단가</div>
+          <div class="info-box-val yellow" id="daily-avg-cost">$--</div>
+        </div>
+        <div class="info-box">
+          <div class="info-box-label">총 보유 수량</div>
+          <div class="info-box-val accent" id="daily-total-qty">0주</div>
+        </div>
+        <div class="info-box">
+          <div class="info-box-label">총 매수 금액</div>
+          <div class="info-box-val accent" id="daily-total-cost">$--</div>
         </div>
       </div>
 
-      <div class="card-title" style="margin-bottom:8px;">시뮬레이션 계산기</div>
-      <div class="simulation-row">
-        <input type="number" id="sim-price" placeholder="매수가 ($)" step="0.01">
-        <input type="number" id="sim-qty" placeholder="수량" style="max-width:80px;">
-        <button class="calc-btn" onclick="calcSimulation()">계산</button>
+      <!-- 매도 목표가 강조 -->
+      <div id="daily-sell-target-box" style="
+        background: rgba(0,214,143,0.08);
+        border: 1px solid rgba(0,214,143,0.3);
+        border-radius: 12px; padding: 14px; text-align: center;">
+        <div style="font-size:0.68rem;color:var(--text3);font-weight:700;letter-spacing:1px;margin-bottom:4px;">
+          📌 LOC 전량 매도 목표가 (평단 +10%)
+        </div>
+        <div style="font-family:var(--font-display);font-size:2.6rem;color:var(--green);letter-spacing:2px;" id="daily-loc-target">$--</div>
+        <div style="font-size:0.72rem;color:var(--text2);margin-top:6px;" id="daily-profit-preview">--</div>
       </div>
 
-      <div id="sim-result"></div>
+      <!-- 현재가 vs 목표 상태 -->
+      <div id="daily-status-bar" style="margin-top:10px; text-align:center; font-size:0.8rem; font-weight:700; color:var(--text3);">
+        포지션 없음
+      </div>
     </div>
 
-    <!-- 10% 전략 매수 기록 -->
+    <!-- 매수 기록 추가 -->
     <div class="card">
-      <div class="card-title">10% 전략 매수 기록</div>
-      <div class="input-grid">
-        <input type="number" id="d-p" step="0.01" placeholder="매수가 ($)">
-        <input type="number" id="d-q" placeholder="수량">
-        <button class="add-btn" onclick="addDaily()" style="background:linear-gradient(135deg,var(--yellow),#ffb700);color:#000;">+</button>
+      <div class="card-title">📅 LOC 매수 기록 추가 (전날 종가 기준)</div>
+      <div style="display:grid; grid-template-columns:1fr 80px 80px 44px; gap:8px; align-items:center;">
+        <input type="date" id="d-date" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 10px;font-size:0.82rem;font-family:var(--font-body);outline:none;">
+        <input type="number" id="d-p" step="0.01" placeholder="종가($)" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 10px;font-size:0.82rem;font-family:var(--font-body);outline:none;width:100%;">
+        <input type="number" id="d-q" placeholder="수량" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 10px;font-size:0.82rem;font-family:var(--font-body);outline:none;width:100%;">
+        <button onclick="addDaily()" style="background:linear-gradient(135deg,var(--yellow),#ffb700);color:#000;border:none;border-radius:10px;font-weight:900;font-size:1.2rem;cursor:pointer;height:44px;width:44px;">+</button>
       </div>
+      <div style="font-size:0.65rem;color:var(--text3);margin-top:6px;">날짜는 매수 실행일 (전날 종가 LOC = 당일 장 시작 전 예약)</div>
     </div>
+
+    <!-- 매도 실행 버튼 -->
+    <div id="daily-sell-btn-area"></div>
+
+    <!-- 개별 매수 리스트 -->
     <div id="daily-list"></div>
   </div>
 
@@ -597,8 +623,8 @@ async function fetchStockPrice() {
   document.getElementById('fixed8').innerText = `$${(price * 0.92).toFixed(2)}`;
   document.getElementById('currentBuy').innerText = `$${(price * 1.05).toFixed(2)}`;
   document.getElementById('daily-current-price').innerText = `$${price.toFixed(2)}`;
-  document.getElementById('daily-target').innerText = `$${(price * 1.10).toFixed(2)}`;
   document.getElementById('status').innerText = '업데이트: ' + new Date().toLocaleTimeString();
+  renderDaily(); // 현재가 기준 목표 도달 여부 갱신
 
   calculateDrawdown(price);
 }
@@ -723,93 +749,183 @@ function render() {
   }).join('');
 }
 
-// ─── 10% Daily Strategy ───────────────────────────────────
-function calcSimulation() {
-  const p = parseFloat(document.getElementById('sim-price').value);
-  const q = parseInt(document.getElementById('sim-qty').value);
-  if (!p || !q) return toast('⚠️ 매수가와 수량을 입력하세요.');
+// ─── 10% 전략 (평단 기준) ─────────────────────────────────
 
-  const buyAmt = p * q;
-  const target = p * 1.10;
-  const sellAmt = target * q;
-  const profit = sellAmt - buyAmt;
+// 평단 계산 유틸
+function calcAvgCost(items) {
+  const totalQty = items.reduce((s, i) => s + i.q, 0);
+  const totalCost = items.reduce((s, i) => s + parseFloat(i.p) * i.q, 0);
+  return { totalQty, totalCost, avgCost: totalQty > 0 ? totalCost / totalQty : 0 };
+}
 
-  document.getElementById('sim-result').innerHTML = `
-    <table class="result-table" style="margin-top:8px;">
-      <tr><th>항목</th><th>금액</th></tr>
-      <tr><td>매수 금액</td><td>$${buyAmt.toFixed(2)}</td></tr>
-      <tr class="row-sell"><td>목표가 (10%↑)</td><td class="highlight">$${target.toFixed(2)}</td></tr>
-      <tr class="row-sell"><td>매도 금액</td><td class="highlight">$${sellAmt.toFixed(2)}</td></tr>
-      <tr><td>예상 수익</td><td class="highlight">+$${profit.toFixed(2)}</td></tr>
-      <tr><td>수익률</td><td class="highlight">+10.0%</td></tr>
-    </table>`;
+// 날짜 input 오늘 기본값 세팅
+function initDailyDateInput() {
+  const el = document.getElementById('d-date');
+  if (el && !el.value) {
+    const today = new Date();
+    el.value = today.toISOString().split('T')[0];
+  }
 }
 
 function addDaily() {
+  const dateVal = document.getElementById('d-date').value;
   const p = parseFloat(document.getElementById('d-p').value);
   const q = parseInt(document.getElementById('d-q').value);
-  if (!p || !q) return toast('⚠️ 매수가와 수량을 입력하세요.');
+  if (!dateVal) return toast('⚠️ 날짜를 선택하세요.');
+  if (!p || p <= 0) return toast('⚠️ 매수가를 입력하세요.');
+  if (!q || q <= 0) return toast('⚠️ 수량을 입력하세요.');
+
   const items = S.getDailyTrades(currentTicker);
-  items.push({ id: Date.now(), p: p.toFixed(2), q, t: (p * 1.10).toFixed(2), strategy: '10%' });
+  items.push({
+    id: Date.now(),
+    date: dateVal,
+    p: p.toFixed(2),
+    q,
+    strategy: '10%'
+  });
+  // 날짜 순 정렬
+  items.sort((a, b) => a.date.localeCompare(b.date));
   S.setDailyTrades(currentTicker, items);
+
   document.getElementById('d-p').value = '';
   document.getElementById('d-q').value = '';
   renderDaily();
-  toast('✅ 10% 전략 기록 추가됨');
+  toast('✅ LOC 매수 기록 추가됨');
 }
 
-function removeDaily(id) {
+function deleteDailyItem(id) {
+  if (!confirm('이 매수 기록을 삭제하시겠습니까?\n(수익 미실현 삭제)')) return;
+  S.setDailyTrades(currentTicker, S.getDailyTrades(currentTicker).filter(i => i.id !== id));
+  renderDaily();
+  toast('🗑️ 기록 삭제됨');
+}
+
+function executeAllSell() {
   const items = S.getDailyTrades(currentTicker);
-  const item = items.find(i => i.id === id);
-  if (!item) return;
+  if (!items.length) return;
 
-  const buyAmt = parseFloat(item.p) * item.q;
-  const sellAmt = parseFloat(item.t) * item.q;
-  const profit = sellAmt - buyAmt;
-  const pct = ((profit / buyAmt) * 100).toFixed(2);
+  const { totalQty, totalCost, avgCost } = calcAvgCost(items);
+  const locTarget = avgCost * 1.10;
+  const sellAmt = locTarget * totalQty;
+  const profit = sellAmt - totalCost;
+  const pct = ((profit / totalCost) * 100).toFixed(2);
 
-  if (confirm(`✅ 10% 익절 체결 확인\n\n${currentTicker} ${item.q}주\n매수: $${item.p} → 익절: $${item.t}\n수익: $${profit.toFixed(2)} (+${pct}%)\n\n수익 기록에 저장합니까?`)) {
-    S.setDailyTrades(currentTicker, items.filter(i => i.id !== id));
-    const hist = S.getHistory();
-    hist.push({
-      id: Date.now(),
-      ticker: currentTicker,
-      strategy: '10%',
-      p: item.p,
-      q: item.q,
-      t: item.t,
-      profit: profit.toFixed(2),
-      pct,
-      date: new Date().toLocaleDateString('ko-KR'),
-      ts: Date.now()
-    });
-    S.setHistory(hist);
-    renderDaily();
-    toast(`💰 수익 $${profit.toFixed(2)} 기록 완료!`);
-  }
+  if (!confirm(
+    `✅ LOC 전량 매도 체결 확인\n\n` +
+    `${currentTicker} 총 ${totalQty}주\n` +
+    `평균단가: $${avgCost.toFixed(2)}\n` +
+    `LOC 매도가: $${locTarget.toFixed(2)} (+10%)\n` +
+    `총 매수금액: $${totalCost.toFixed(2)}\n` +
+    `총 매도금액: $${sellAmt.toFixed(2)}\n` +
+    `순수익: $${profit.toFixed(2)} (+${pct}%)\n\n` +
+    `수익 기록에 저장하고 포지션을 초기화합니까?`
+  )) return;
+
+  // 수익 기록 저장
+  const hist = S.getHistory();
+  hist.push({
+    id: Date.now(),
+    ticker: currentTicker,
+    strategy: '10%',
+    p: avgCost.toFixed(2),        // 평단
+    q: totalQty,
+    t: locTarget.toFixed(2),
+    profit: profit.toFixed(2),
+    pct,
+    date: new Date().toLocaleDateString('ko-KR'),
+    ts: Date.now(),
+    note: `${items.length}회 분할매수 평단`
+  });
+  S.setHistory(hist);
+
+  // 포지션 초기화
+  S.setDailyTrades(currentTicker, []);
+  renderDaily();
+  toast(`💰 전량 매도 완료! 수익 $${profit.toFixed(2)}`);
 }
 
 function renderDaily() {
+  initDailyDateInput();
+
+  // 티커 라벨 업데이트
+  const lbl = document.getElementById('daily-ticker-label');
+  if (lbl) lbl.innerText = currentTicker;
+
   const items = S.getDailyTrades(currentTicker);
   const root = document.getElementById('daily-list');
+  const btnArea = document.getElementById('daily-sell-btn-area');
+
+  // 평단 계산
+  const { totalQty, totalCost, avgCost } = calcAvgCost(items);
+  const locTarget = avgCost > 0 ? avgCost * 1.10 : 0;
+  const expectedProfit = locTarget > 0 ? (locTarget * totalQty) - totalCost : 0;
+
+  // 대시보드 업데이트
+  document.getElementById('daily-avg-cost').innerText = avgCost > 0 ? `$${avgCost.toFixed(2)}` : '$--';
+  document.getElementById('daily-total-qty').innerText = totalQty > 0 ? `${totalQty}주` : '0주';
+  document.getElementById('daily-total-cost').innerText = totalCost > 0 ? `$${totalCost.toFixed(2)}` : '$--';
+  document.getElementById('daily-loc-target').innerText = locTarget > 0 ? `$${locTarget.toFixed(2)}` : '$--';
+
+  // 예상 수익 프리뷰
+  if (expectedProfit > 0) {
+    document.getElementById('daily-profit-preview').innerText =
+      `전량 매도 시 예상 수익: +$${expectedProfit.toFixed(2)} (+10.0%) · 총 ${totalQty}주`;
+  } else {
+    document.getElementById('daily-profit-preview').innerText = '포지션 없음';
+  }
+
+  // 현재가 vs 목표 상태 바
+  const statusBar = document.getElementById('daily-status-bar');
+  if (currentPrice > 0 && locTarget > 0) {
+    const diff = ((currentPrice - locTarget) / locTarget * 100).toFixed(1);
+    const reached = currentPrice >= locTarget;
+    if (reached) {
+      statusBar.innerHTML = `<span style="color:var(--green);">🟢 현재가 $${currentPrice.toFixed(2)} — 목표가 도달! LOC 매도 실행 가능</span>`;
+    } else {
+      statusBar.innerHTML = `<span style="color:var(--red);">🔴 현재가 $${currentPrice.toFixed(2)} — 목표까지 ${Math.abs(diff)}% 남음</span>`;
+    }
+  } else if (items.length === 0) {
+    statusBar.innerHTML = `<span style="color:var(--text3);">포지션 없음</span>`;
+  } else {
+    statusBar.innerHTML = `<span style="color:var(--text3);">시세를 불러온 후 상태 확인 가능</span>`;
+  }
+
+  // 전량 매도 버튼
+  if (items.length > 0) {
+    btnArea.innerHTML = `
+      <button onclick="executeAllSell()" style="
+        width:100%; padding:15px; margin-bottom:12px;
+        background:linear-gradient(135deg,var(--green),#00b87a);
+        border:none; border-radius:14px; color:#000;
+        font-family:var(--font-body); font-weight:900; font-size:0.95rem;
+        cursor:pointer; letter-spacing:0.5px;">
+        ✅ LOC 전량 매도 체결 ($${locTarget.toFixed(2)})
+      </button>`;
+  } else {
+    btnArea.innerHTML = '';
+  }
+
+  // 개별 리스트
   if (!items.length) {
-    root.innerHTML = `<div class="empty-state"><div class="empty-icon">🔥</div>10% 전략 기록이 없습니다</div>`;
+    root.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div>LOC 매수 기록이 없습니다</div>`;
     return;
   }
-  root.innerHTML = [...items].reverse().map(i => {
-    const profit = ((parseFloat(i.t) - parseFloat(i.p)) * i.q).toFixed(2);
-    return `
-      <div class="trade-item" style="border-left-color:var(--yellow);">
-        <div class="trade-info">
-          <div class="trade-ticker" style="color:var(--yellow);">${currentTicker} · 10% 전략</div>
-          <div class="trade-buy">매수 $${i.p} × ${i.q}주 = $${(parseFloat(i.p)*i.q).toFixed(2)}</div>
-          <div class="trade-sell-label">익절 목표가</div>
-          <div class="trade-sell-price" style="color:var(--yellow);">$${i.t}</div>
-          <div class="trade-profit-badge" style="background:rgba(255,209,102,0.12);color:var(--yellow);border-color:rgba(255,209,102,0.3);">+$${profit} 예상 수익</div>
-        </div>
-        <button class="check-btn" onclick="removeDaily(${i.id})">✓</button>
-      </div>`;
-  }).join('');
+
+  root.innerHTML = `
+    <div class="card-title" style="margin-bottom:8px; padding:0 2px;">📋 개별 매수 내역 (${items.length}회)</div>
+    ${[...items].reverse().map(i => {
+      const amt = (parseFloat(i.p) * i.q).toFixed(2);
+      const wt = totalCost > 0 ? ((parseFloat(i.p) * i.q / totalCost) * 100).toFixed(1) : 0;
+      return `
+        <div class="trade-item" style="border-left-color:var(--yellow); margin-bottom:8px;">
+          <div class="trade-info">
+            <div class="trade-ticker" style="color:var(--yellow);">${currentTicker} · ${i.date} LOC</div>
+            <div class="trade-buy" style="margin:4px 0;">종가 $${i.p} × ${i.q}주 = $${amt}</div>
+            <div style="font-size:0.65rem;color:var(--text3);">전체 비중 ${wt}%</div>
+          </div>
+          <button class="del-btn" onclick="deleteDailyItem(${i.id})" title="삭제">✕</button>
+        </div>`;
+    }).join('')}`;
 }
 
 // ─── History ──────────────────────────────────────────────
