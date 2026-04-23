@@ -1,387 +1,895 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>스마트 매도 매니저</title>
-    <style>
-        :root { --primary: #007bff; --buy: #ff4d4d; --sell: #2ecc71; --bg: #f2f4f7; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; }
-        .container { width: 100%; max-width: 450px; margin: 0 auto; }
-        .card { background: #fff; padding: 18px; border-radius: 18px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        
-        .ticker-selector { display: flex; gap: 8px; margin-bottom: 15px; }
-        .ticker-btn { flex: 1; padding: 10px; border: 2px solid #eee; border-radius: 10px; background: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .ticker-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .custom-ticker { display: flex; gap: 8px; margin-top: 8px; }
-        .custom-ticker input { flex: 1; padding: 10px; border: 2px solid #eee; border-radius: 10px; font-size: 0.9rem; text-transform: uppercase; }
-        .custom-ticker button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>스마트 매도 매니저</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f14;
+  --surface: #151820;
+  --surface2: #1c2030;
+  --border: #252a3a;
+  --accent: #4f8ef7;
+  --accent2: #7b5cf0;
+  --green: #00d68f;
+  --red: #ff5252;
+  --yellow: #ffd166;
+  --text: #e8eaf0;
+  --text2: #8891a8;
+  --text3: #4a5268;
+  --radius: 16px;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Noto Sans KR', sans-serif;
+}
 
-        .ticker-display { text-align: center; font-size: 1.2rem; font-weight: bold; color: #666; margin-bottom: 5px; }
-        .price-main { font-size: 2.8rem; font-weight: 800; color: var(--primary); text-align: center; margin: 5px 0; }
-        
-        .guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; border-top: 1px dashed #eee; padding-top: 15px; }
-        .guide-item { 
-            text-align: center; 
-            padding: 12px; 
-            border-radius: 12px; 
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        }
-        .guide-item.loading { opacity: 0.5; }
-        .guide-label { font-size: 0.7rem; color: #666; font-weight: bold; margin-bottom: 4px; }
-        .guide-percent { font-size: 0.85rem; color: #ff4d4d; font-weight: bold; margin-bottom: 6px; }
-        .guide-price { font-weight: bold; font-size: 1.2rem; color: #2ecc71; }
-        .guide-info { font-size: 0.6rem; color: #999; margin-top: 4px; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-        .current-price-box {
-            text-align: center;
-            padding: 10px;
-            margin-top: 15px;
-            border-radius: 10px;
-            background: #f8f9fa;
-        }
-        .current-price-box .label { font-size: 0.75rem; color: #888; }
-        .current-price-box .value { font-size: 1.1rem; font-weight: bold; color: var(--primary); margin-top: 4px; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
 
-        .input-row { display: grid; grid-template-columns: 1.2fr 1fr 60px; gap: 8px; margin-top: 10px; }
-        input[type="number"] { padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 1rem; width: 100%; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--primary); }
-        .add-btn { background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        
-        .trade-item { background: white; padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border: 1px solid #eee; position: relative; overflow: hidden; }
-        .trade-item::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--sell); }
-        .item-info { display: flex; flex-direction: column; gap: 4px; }
-        .buy-record { font-size: 0.8rem; color: #888; }
-        .sell-target-label { font-size: 0.75rem; color: #666; font-weight: bold; }
-        .sell-target-price { color: var(--sell); font-weight: 800; font-size: 1.3rem; }
-        
-        .check-btn { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #eee; background: #fff; color: #ddd; font-size: 1.3rem; cursor: pointer; transition: 0.2s; }
-        .check-btn:active { background: #f0f0f0; }
+/* ── Header ── */
+.header {
+  background: linear-gradient(135deg, #1a1f30 0%, #0d1525 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 16px 0;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.app-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.refresh-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+.refresh-btn:active { background: var(--border); }
 
-        .status { font-size: 0.7rem; text-align: center; color: #bbb; margin-top: 8px; }
+/* ── Tabs ── */
+.tabs {
+  display: flex; gap: 4px;
+}
+.tab-btn {
+  flex: 1; padding: 10px 8px;
+  background: none; border: none;
+  color: var(--text3);
+  font-family: var(--font-body);
+  font-size: 0.78rem; font-weight: 700;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
 
-        .source-badge {
-            display: inline-block;
-            font-size: 0.6rem;
-            background: #e8f4fd;
-            color: #007bff;
-            padding: 2px 6px;
-            border-radius: 20px;
-            margin-left: 6px;
-            vertical-align: middle;
-        }
-    </style>
+/* ── Container ── */
+.container { padding: 14px; max-width: 480px; margin: 0 auto; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: 0.72rem; font-weight: 700;
+  color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+/* ── Ticker Selector ── */
+.ticker-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.ticker-btn {
+  flex: 1; min-width: 60px; padding: 9px 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text2);
+  font-weight: 700; font-size: 0.85rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.ticker-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: transparent; color: #fff;
+}
+.custom-row { display: flex; gap: 8px; margin-top: 8px; }
+.custom-row input {
+  flex: 1; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text); padding: 9px 12px; font-size: 0.85rem;
+  font-family: var(--font-body); text-transform: uppercase;
+  outline: none;
+}
+.custom-row input:focus { border-color: var(--accent); }
+.custom-row button {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: 10px; color: #fff;
+  font-weight: 700; font-family: var(--font-body);
+  padding: 9px 16px; cursor: pointer; font-size: 0.85rem;
+}
+
+/* ── Price Display ── */
+.price-hero {
+  text-align: center; padding: 8px 0 4px;
+}
+.ticker-label {
+  font-family: var(--font-display);
+  font-size: 2rem; letter-spacing: 3px; color: var(--text2);
+}
+.price-big {
+  font-family: var(--font-display);
+  font-size: 3.8rem; line-height: 1.1;
+  background: linear-gradient(135deg, var(--accent) 30%, var(--green));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: 1px;
+}
+.source-tag {
+  display: inline-block; font-size: 0.62rem;
+  background: rgba(79,142,247,0.15); color: var(--accent);
+  border: 1px solid rgba(79,142,247,0.3);
+  padding: 2px 8px; border-radius: 20px; margin-top: 4px;
+}
+.status-txt { font-size: 0.65rem; color: var(--text3); margin-top: 6px; }
+
+/* ── Guide Grid ── */
+.guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.guide-box {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px; text-align: center;
+  transition: opacity 0.3s;
+}
+.guide-box.loading { opacity: 0.4; }
+.guide-box-label { font-size: 0.65rem; color: var(--text3); font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+.guide-box-pct { font-size: 0.78rem; color: var(--red); font-weight: 700; margin-bottom: 6px; }
+.guide-box-price { font-family: var(--font-display); font-size: 1.5rem; color: var(--green); letter-spacing: 1px; }
+.guide-box-sub { font-size: 0.6rem; color: var(--text3); margin-top: 4px; }
+
+/* ── Buy Now Box ── */
+.buy-now-box {
+  margin-top: 10px; background: rgba(0,214,143,0.08);
+  border: 1px solid rgba(0,214,143,0.25);
+  border-radius: 12px; padding: 12px; text-align: center;
+}
+.buy-now-label { font-size: 0.7rem; color: var(--text3); font-weight: 700; }
+.buy-now-price { font-family: var(--font-display); font-size: 2rem; color: var(--green); letter-spacing: 1px; margin-top: 4px; }
+
+/* ── Input Row ── */
+.input-grid { display: grid; grid-template-columns: 1.3fr 1fr 50px; gap: 8px; }
+.input-grid input {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); padding: 11px 12px;
+  font-size: 0.9rem; font-family: var(--font-body); outline: none; width: 100%;
+}
+.input-grid input:focus { border-color: var(--accent); }
+.add-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: 10px; color: #fff;
+  font-weight: 900; font-size: 1.2rem; cursor: pointer; width: 100%; height: 100%;
+}
+
+/* ── Trade Items ── */
+.trade-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 14px 14px 18px;
+  margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+  position: relative; overflow: hidden;
+}
+.trade-item::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, var(--accent), var(--accent2));
+}
+.trade-item.profit-item::before { background: linear-gradient(180deg, var(--green), #00b87a); }
+.trade-info { flex: 1; }
+.trade-ticker { font-size: 0.68rem; color: var(--text3); font-weight: 700; letter-spacing: 1px; }
+.trade-buy { font-size: 0.85rem; color: var(--text2); margin: 3px 0; }
+.trade-sell-label { font-size: 0.65rem; color: var(--text3); font-weight: 700; letter-spacing: 1px; margin-top: 6px; }
+.trade-sell-price { font-family: var(--font-display); font-size: 1.6rem; color: var(--green); letter-spacing: 1px; line-height: 1.1; }
+.trade-profit-badge {
+  font-size: 0.68rem; font-weight: 700;
+  background: rgba(0,214,143,0.12); color: var(--green);
+  border: 1px solid rgba(0,214,143,0.3);
+  padding: 2px 7px; border-radius: 20px; display: inline-block; margin-top: 4px;
+}
+.check-btn {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface2); color: var(--text3);
+  font-size: 1.3rem; cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+}
+.check-btn:active { border-color: var(--green); color: var(--green); background: rgba(0,214,143,0.1); }
+
+/* ── Stats ── */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.stat-box {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px; text-align: center;
+}
+.stat-label { font-size: 0.65rem; color: var(--text3); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+.stat-value { font-family: var(--font-display); font-size: 1.4rem; letter-spacing: 1px; }
+.stat-value.green { color: var(--green); }
+.stat-value.red { color: var(--red); }
+.stat-value.yellow { color: var(--yellow); }
+.stat-value.accent { color: var(--accent); }
+
+/* ── Profit History ── */
+.history-item {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.history-info { }
+.history-ticker { font-size: 0.72rem; color: var(--accent); font-weight: 700; letter-spacing: 1px; }
+.history-detail { font-size: 0.8rem; color: var(--text2); margin-top: 3px; }
+.history-date { font-size: 0.62rem; color: var(--text3); margin-top: 3px; }
+.history-profit { text-align: right; }
+.history-profit-amt { font-family: var(--font-display); font-size: 1.3rem; letter-spacing: 1px; }
+.history-profit-pct { font-size: 0.68rem; font-weight: 700; margin-top: 2px; }
+
+.export-btn {
+  width: 100%; padding: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; color: var(--text2);
+  font-family: var(--font-body); font-size: 0.82rem; font-weight: 700;
+  cursor: pointer; margin-top: 8px; transition: all 0.2s;
+}
+.export-btn:active { background: var(--border); }
+
+.del-btn {
+  background: none; border: none; color: var(--text3);
+  font-size: 1rem; cursor: pointer; padding: 4px;
+}
+
+/* ── Daily 10% Tab ── */
+.daily-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.info-box {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 13px; text-align: center;
+}
+.info-box-label { font-size: 0.65rem; color: var(--text3); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+.info-box-val { font-family: var(--font-display); font-size: 1.6rem; letter-spacing: 1px; }
+
+.logic-explain {
+  background: rgba(79,142,247,0.08);
+  border: 1px solid rgba(79,142,247,0.2);
+  border-radius: 12px; padding: 14px; margin-bottom: 12px;
+}
+.logic-explain p { font-size: 0.78rem; color: var(--text2); line-height: 1.7; }
+.logic-explain strong { color: var(--accent); }
+
+.simulation-row {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
+}
+.simulation-row input {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); padding: 11px 12px;
+  font-size: 0.9rem; font-family: var(--font-body); outline: none;
+}
+.simulation-row input:focus { border-color: var(--yellow); }
+.calc-btn {
+  background: linear-gradient(135deg, var(--yellow), #ffb700);
+  border: none; border-radius: 10px; color: #000;
+  font-weight: 900; font-size: 0.85rem; font-family: var(--font-body);
+  padding: 11px 16px; cursor: pointer; white-space: nowrap;
+}
+
+.result-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.result-table th {
+  background: var(--surface2); color: var(--text3);
+  font-weight: 700; padding: 8px 10px;
+  font-size: 0.65rem; letter-spacing: 1px; text-align: left;
+}
+.result-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
+.result-table tr:last-child td { border-bottom: none; }
+.result-table .highlight { color: var(--green); font-weight: 700; }
+.result-table .row-sell { background: rgba(0,214,143,0.05); }
+
+/* ── Empty State ── */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 0.85rem; }
+.empty-icon { font-size: 2rem; margin-bottom: 10px; opacity: 0.4; }
+
+/* ── Spinner ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 1s linear infinite; display: inline-block; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 10px 20px; border-radius: 30px;
+  font-size: 0.82rem; font-weight: 700; z-index: 999;
+  opacity: 0; transition: all 0.3s; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
 </head>
 <body>
 
+<div class="header">
+  <div class="header-top">
+    <div class="app-title">📈 SELL MGR</div>
+    <button class="refresh-btn" onclick="fetchStockPrice()"><span id="refreshIcon">🔄</span> 새로고침</button>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('main', this)">📊 5% 매도</button>
+    <button class="tab-btn" onclick="switchTab('daily', this)">🔥 10% 전략</button>
+    <button class="tab-btn" onclick="switchTab('history', this)">💰 수익 기록</button>
+  </div>
+</div>
+
 <div class="container">
+
+  <!-- ═══════════════ TAB 1: 5% 매도 전략 ═══════════════ -->
+  <div class="tab-panel active" id="tab-main">
+
+    <!-- 종목 선택 -->
     <div class="card">
-        <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px;">📊 종목 선택</div>
-        <div class="ticker-selector">
-            <button class="ticker-btn active" onclick="selectTicker('SOXL', this)">SOXL</button>
-            <button class="ticker-btn" onclick="selectTicker('TQQQ', this)">TQQQ</button>
-            <button class="ticker-btn" onclick="selectTicker('UPRO', this)">UPRO</button>
-        </div>
-        <div class="custom-ticker">
-            <input type="text" id="customTicker" placeholder="다른 티커 입력 (예: NVDA)" maxlength="10">
-            <button onclick="addCustomTicker()">적용</button>
-        </div>
+      <div class="card-title">종목 선택</div>
+      <div class="ticker-row">
+        <button class="ticker-btn active" onclick="selectTicker('SOXL', this)">SOXL</button>
+        <button class="ticker-btn" onclick="selectTicker('TQQQ', this)">TQQQ</button>
+        <button class="ticker-btn" onclick="selectTicker('UPRO', this)">UPRO</button>
+      </div>
+      <div class="custom-row">
+        <input type="text" id="customTicker" placeholder="다른 티커 입력 (예: NVDA)" maxlength="10">
+        <button onclick="addCustomTicker()">적용</button>
+      </div>
     </div>
 
+    <!-- 시세 -->
     <div class="card">
-        <div class="ticker-display" id="tickerDisplay">SOXL</div>
-        <div style="text-align:center; font-size:0.8rem; color:#888;">실시간 시세 <span class="source-badge" id="sourceBadge">-</span></div>
-        <div id="price" class="price-main">--.--</div>
-        
-        <div class="guide-grid">
-            <div class="guide-item">
-                <div class="guide-label">📍 고정 전략</div>
-                <div class="guide-percent">-8.0% 하락시</div>
-                <div class="guide-price" id="fixed8">$--.--</div>
-                <div class="guide-info">기본 추매가</div>
-            </div>
-            
-            <div class="guide-item" id="dynamicGuide">
-                <div class="guide-label">📊 동적 전략</div>
-                <div class="guide-percent" id="dynamicPercent">계산중...</div>
-                <div class="guide-price" id="dynamic30">$--.--</div>
-                <div class="guide-info">1년 상위 30일</div>
-            </div>
-        </div>
+      <div class="price-hero">
+        <div class="ticker-label" id="tickerDisplay">SOXL</div>
+        <div class="price-big" id="price">--.-</div>
+        <div><span class="source-tag" id="sourceBadge">연결 중...</span></div>
+        <div class="status-txt" id="status">데이터를 불러오는 중...</div>
+      </div>
 
-        <div class="current-price-box">
-            <div class="label">💰 오늘 종가 매수</div>
-            <div class="value" id="currentBuy">$--.--</div>
+      <div class="guide-grid">
+        <div class="guide-box">
+          <div class="guide-box-label">📍 고정 전략</div>
+          <div class="guide-box-pct">-8.0% 하락시</div>
+          <div class="guide-box-price" id="fixed8">$--</div>
+          <div class="guide-box-sub">기본 추매가</div>
         </div>
+        <div class="guide-box" id="dynamicGuide">
+          <div class="guide-box-label">📊 동적 전략</div>
+          <div class="guide-box-pct" id="dynamicPercent">계산 중...</div>
+          <div class="guide-box-price" id="dynamic30">$--</div>
+          <div class="guide-box-sub">1년 상위 30일 평균</div>
+        </div>
+      </div>
 
-        <div class="status" id="status">데이터를 불러오는 중...</div>
-        <button onclick="fetchStockPrice()" style="width:100%; margin-top:10px; padding:8px; border:none; background:#f8f9fa; border-radius:8px; font-size:0.7rem; color:#888; cursor:pointer;">🔄 시세 새로고침</button>
+      <div class="buy-now-box">
+        <div class="buy-now-label">💰 오늘 매수 시 익절가 (5%)</div>
+        <div class="buy-now-price" id="currentBuy">$--</div>
+      </div>
     </div>
 
+    <!-- 신규 매수 기록 -->
     <div class="card">
-        <div style="font-weight:bold; font-size:0.9rem; margin-bottom:10px;">➕ 신규 매수 기록</div>
-        <div class="input-row">
-            <input type="number" id="p" step="0.01" placeholder="매수가($)">
-            <input type="number" id="q" placeholder="수량">
-            <button class="add-btn" onclick="add()">추가</button>
-        </div>
+      <div class="card-title">신규 매수 기록 추가</div>
+      <div class="input-grid">
+        <input type="number" id="p" step="0.01" placeholder="매수가 ($)">
+        <input type="number" id="q" placeholder="수량">
+        <button class="add-btn" onclick="add()">+</button>
+      </div>
     </div>
 
     <div id="list"></div>
+  </div>
+
+  <!-- ═══════════════ TAB 2: 10% 전략 ═══════════════ -->
+  <div class="tab-panel" id="tab-daily">
+    <div class="card">
+      <div class="card-title">🔥 매일 매수 → 10% 익절 전략</div>
+
+      <div class="logic-explain">
+        <p>
+          <strong>전략 로직:</strong><br>
+          매일 장 마감 시 <strong>일정 금액을 매수</strong>하고,<br>
+          다음날 주가가 <strong>전일 매수가 대비 +10% 상승</strong>하면 전량 매도합니다.<br>
+          매도가 안 되면 해당 포지션을 계속 보유하며 추가 매수를 반복합니다.<br><br>
+          <strong>리스크:</strong> 레버리지 ETF 특성상 하락 지속 시 손실 누적 주의.
+        </p>
+      </div>
+
+      <div class="daily-info-grid" style="margin-bottom:12px;">
+        <div class="info-box">
+          <div class="info-box-label">현재 시세</div>
+          <div class="info-box-val accent" id="daily-current-price">$--</div>
+        </div>
+        <div class="info-box">
+          <div class="info-box-label">10% 익절 목표</div>
+          <div class="info-box-val green" id="daily-target">$--</div>
+        </div>
+      </div>
+
+      <div class="card-title" style="margin-bottom:8px;">시뮬레이션 계산기</div>
+      <div class="simulation-row">
+        <input type="number" id="sim-price" placeholder="매수가 ($)" step="0.01">
+        <input type="number" id="sim-qty" placeholder="수량" style="max-width:80px;">
+        <button class="calc-btn" onclick="calcSimulation()">계산</button>
+      </div>
+
+      <div id="sim-result"></div>
+    </div>
+
+    <!-- 10% 전략 매수 기록 -->
+    <div class="card">
+      <div class="card-title">10% 전략 매수 기록</div>
+      <div class="input-grid">
+        <input type="number" id="d-p" step="0.01" placeholder="매수가 ($)">
+        <input type="number" id="d-q" placeholder="수량">
+        <button class="add-btn" onclick="addDaily()" style="background:linear-gradient(135deg,var(--yellow),#ffb700);color:#000;">+</button>
+      </div>
+    </div>
+    <div id="daily-list"></div>
+  </div>
+
+  <!-- ═══════════════ TAB 3: 수익 기록 ═══════════════ -->
+  <div class="tab-panel" id="tab-history">
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">총 실현 수익</div>
+        <div class="stat-value green" id="total-profit">$0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">총 거래 횟수</div>
+        <div class="stat-value accent" id="total-trades">0회</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">평균 수익률</div>
+        <div class="stat-value yellow" id="avg-return">0%</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">투자 원금 합계</div>
+        <div class="stat-value accent" id="total-invested">$0</div>
+      </div>
+    </div>
+
+    <div id="history-list"></div>
+
+    <button class="export-btn" onclick="exportCSV()">📥 CSV로 내보내기 (구글시트 붙여넣기용)</button>
+    <button class="export-btn" onclick="clearHistory()" style="margin-top:6px; color:var(--red); border-color:rgba(255,82,82,0.3);">🗑️ 수익 기록 초기화</button>
+  </div>
+
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-    let currentTicker = 'SOXL';
-    let drawdownCache = {};
+// ─── State ───────────────────────────────────────────────
+let currentTicker = 'SOXL';
+let currentPrice = 0;
+let drawdownCache = {};
 
-    function getAllItems() {
-        return JSON.parse(localStorage.getItem('multi_ticker_trades') || '{}');
-    }
-    function getCurrentItems() {
-        return getAllItems()[currentTicker] || [];
-    }
-    function saveCurrentItems(items) {
-        const all = getAllItems();
-        all[currentTicker] = items;
-        localStorage.setItem('multi_ticker_trades', JSON.stringify(all));
-    }
+// ─── Storage helpers ──────────────────────────────────────
+const S = {
+  get: (k, def = null) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } },
+  set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+  getTrades: (ticker) => (S.get('ssm_trades', {}))[ticker] || [],
+  setTrades: (ticker, items) => { const a = S.get('ssm_trades', {}); a[ticker] = items; S.set('ssm_trades', a); },
+  getDailyTrades: (ticker) => (S.get('ssm_daily', {}))[ticker] || [],
+  setDailyTrades: (ticker, items) => { const a = S.get('ssm_daily', {}); a[ticker] = items; S.set('ssm_daily', a); },
+  getHistory: () => S.get('ssm_history', []),
+  setHistory: (h) => S.set('ssm_history', h),
+};
 
-    function selectTicker(ticker, btn) {
-        currentTicker = ticker;
-        document.querySelectorAll('.ticker-btn').forEach(b => b.classList.remove('active'));
-        if (btn) btn.classList.add('active');
-        document.getElementById('tickerDisplay').innerText = ticker;
-        document.getElementById('customTicker').value = '';
-        fetchStockPrice();
-        render();
-    }
+// ─── Toast ────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.innerText = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
 
-    function addCustomTicker() {
-        const input = document.getElementById('customTicker');
-        const ticker = input.value.trim().toUpperCase();
-        if (!ticker) return alert('티커를 입력하세요.');
-        currentTicker = ticker;
-        document.querySelectorAll('.ticker-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('tickerDisplay').innerText = ticker;
-        fetchStockPrice();
-        render();
-    }
+// ─── Tab ─────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'history') renderHistory();
+}
 
-    // ─── API 시도 목록 ───────────────────────────────────────────────
+// ─── Ticker ───────────────────────────────────────────────
+function selectTicker(ticker, btn) {
+  currentTicker = ticker;
+  document.querySelectorAll('.ticker-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('tickerDisplay').innerText = ticker;
+  document.getElementById('customTicker').value = '';
+  fetchStockPrice(); render(); renderDaily();
+}
 
-    // 1) Yahoo Finance via corsproxy.io
-    async function tryYahooCorsProxy(ticker) {
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
-        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-        if (!res.ok) throw new Error('corsproxy fail');
-        const json = await res.json();
-        return json.chart.result[0].meta.regularMarketPrice;
-    }
+function addCustomTicker() {
+  const input = document.getElementById('customTicker');
+  const ticker = input.value.trim().toUpperCase();
+  if (!ticker) return alert('티커를 입력하세요.');
+  currentTicker = ticker;
+  document.querySelectorAll('.ticker-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tickerDisplay').innerText = ticker;
+  fetchStockPrice(); render(); renderDaily();
+}
 
-    // 2) Yahoo Finance via allorigins (원래 방식)
-    async function tryYahooAllOrigins(ticker) {
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
-        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-        if (!res.ok) throw new Error('allorigins fail');
-        const json = await res.json();
-        const data = JSON.parse(json.contents);
-        return data.chart.result[0].meta.regularMarketPrice;
-    }
+// ─── Price Fetch ──────────────────────────────────────────
+async function tryFetch(fn) { try { const v = await fn(); if (v && v > 0) return v; } catch {} return null; }
 
-    // 3) Yahoo Finance v7 Quote via allorigins
-    async function tryYahooV7(ticker) {
-        const url = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${ticker}`;
-        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-        if (!res.ok) throw new Error('v7 fail');
-        const json = await res.json();
-        const data = JSON.parse(json.contents);
-        return data.quoteResponse.result[0].regularMarketPrice;
-    }
+const fetchers = [
+  { label: 'Yahoo(1)', fn: async (t) => {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${t}?interval=1d&range=1d`;
+    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+    return (await r.json()).chart.result[0].meta.regularMarketPrice;
+  }},
+  { label: 'Yahoo(2)', fn: async (t) => {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${t}?interval=1d&range=1d`;
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    return JSON.parse((await r.json()).contents).chart.result[0].meta.regularMarketPrice;
+  }},
+  { label: 'Yahoo(3)', fn: async (t) => {
+    const url = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${t}`;
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    return JSON.parse((await r.json()).contents).quoteResponse.result[0].regularMarketPrice;
+  }},
+  { label: 'Stooq', fn: async (t) => {
+    const url = `https://stooq.com/q/l/?s=${t}.US&f=sd2t2ohlcv&h&e=csv`;
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    const lines = (await r.json()).contents.trim().split('\n');
+    const v = parseFloat(lines[1].split(',')[6]);
+    if (isNaN(v)) throw new Error();
+    return v;
+  }},
+];
 
-    // 4) Yahoo Finance via cors-anywhere (공용)
-    async function tryYahooCorsAnywhere(ticker) {
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
-        const res = await fetch(`https://cors-anywhere.herokuapp.com/${url}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        if (!res.ok) throw new Error('cors-anywhere fail');
-        const json = await res.json();
-        return json.chart.result[0].meta.regularMarketPrice;
-    }
+async function fetchStockPrice() {
+  const icon = document.getElementById('refreshIcon');
+  icon.classList.add('spinning');
+  document.getElementById('status').innerText = '업데이트 중...';
+  document.getElementById('sourceBadge').innerText = '연결 중...';
 
-    // 5) Stooq CSV (US 주식은 심볼.US)
-    async function tryStooq(ticker) {
-        const sym = ticker.toUpperCase();
-        const url = `https://stooq.com/q/l/?s=${sym}.US&f=sd2t2ohlcv&h&e=csv`;
-        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-        if (!res.ok) throw new Error('stooq allorigins fail');
-        const json = await res.json();
-        const lines = json.contents.trim().split('\n');
-        if (lines.length < 2) throw new Error('stooq no data');
-        const cols = lines[1].split(',');
-        // Stooq CSV: Symbol,Date,Time,Open,High,Low,Close,Volume
-        const close = parseFloat(cols[6]);
-        if (isNaN(close)) throw new Error('stooq parse fail');
-        return close;
-    }
+  let price = null, label = '-';
+  for (const f of fetchers) {
+    price = await tryFetch(() => f.fn(currentTicker));
+    if (price) { label = f.label; break; }
+  }
 
-    // ─── 메인 fetch (폴백 체인) ──────────────────────────────────────
-    async function fetchStockPrice() {
-        const pEl = document.getElementById('price');
-        const sEl = document.getElementById('status');
-        const badgeEl = document.getElementById('sourceBadge');
-        sEl.innerText = "업데이트 중...";
-        pEl.style.opacity = 0.5;
+  icon.classList.remove('spinning');
+  if (!price) {
+    document.getElementById('status').innerText = '⚠️ 시세 불러오기 실패';
+    document.getElementById('sourceBadge').innerText = '실패';
+    return;
+  }
 
-        const attempts = [
-            { fn: tryYahooCorsProxy,    label: 'Yahoo(1)' },
-            { fn: tryYahooAllOrigins,   label: 'Yahoo(2)' },
-            { fn: tryYahooV7,           label: 'Yahoo(3)' },
-            { fn: tryStooq,             label: 'Stooq'    },
-            { fn: tryYahooCorsAnywhere, label: 'Yahoo(4)' },
-        ];
+  currentPrice = price;
+  document.getElementById('price').innerText = `$${price.toFixed(2)}`;
+  document.getElementById('sourceBadge').innerText = label;
+  document.getElementById('fixed8').innerText = `$${(price * 0.92).toFixed(2)}`;
+  document.getElementById('currentBuy').innerText = `$${(price * 1.05).toFixed(2)}`;
+  document.getElementById('daily-current-price').innerText = `$${price.toFixed(2)}`;
+  document.getElementById('daily-target').innerText = `$${(price * 1.10).toFixed(2)}`;
+  document.getElementById('status').innerText = '업데이트: ' + new Date().toLocaleTimeString();
 
-        let price = null;
-        let usedLabel = '-';
+  calculateDrawdown(price);
+}
 
-        for (const a of attempts) {
-            try {
-                price = await a.fn(currentTicker);
-                if (price && price > 0) { usedLabel = a.label; break; }
-            } catch (e) {
-                console.warn(`[${a.label}] 실패:`, e.message);
-            }
-        }
+// ─── Dynamic Drawdown ─────────────────────────────────────
+async function calculateDrawdown(price) {
+  const g = document.getElementById('dynamicGuide');
+  g.classList.add('loading');
 
-        pEl.style.opacity = 1;
+  const cached = drawdownCache[currentTicker];
+  if (cached && Date.now() - cached.ts < 3600000) { updateDynUI(cached.avg, price); return; }
 
-        if (!price) {
-            sEl.innerText = "⚠️ 모든 시세 소스 실패. 잠시 후 다시 시도해 주세요.";
-            badgeEl.innerText = '실패';
-            return;
-        }
+  const rangeUrls = [
+    async () => {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1y`;
+      const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+      return (await r.json()).chart.result[0].indicators.quote[0].close;
+    },
+    async () => {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1y`;
+      const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+      return JSON.parse((await r.json()).contents).chart.result[0].indicators.quote[0].close;
+    },
+  ];
 
-        pEl.innerText = `$${price.toFixed(2)}`;
-        badgeEl.innerText = usedLabel;
-        document.getElementById('fixed8').innerText = `$${(price * 0.92).toFixed(2)}`;
-        document.getElementById('currentBuy').innerText = `$${price.toFixed(2)}`;
-        sEl.innerText = "최종 업데이트: " + new Date().toLocaleTimeString();
+  let closes = null;
+  for (const fn of rangeUrls) {
+    try {
+      const raw = await fn();
+      const c = raw.filter(v => v !== null && !isNaN(v));
+      if (c.length >= 10) { closes = c; break; }
+    } catch {}
+  }
 
-        calculateDrawdown(price);
-    }
+  if (!closes) { updateDynUI(8.0, price); return; }
 
-    // ─── 동적 하락률 계산 (1년 데이터) ──────────────────────────────
-    async function calculateDrawdown(currentPrice) {
-        const dynamicGuide = document.getElementById('dynamicGuide');
-        const dynamicPercent = document.getElementById('dynamicPercent');
-        const dynamic30 = document.getElementById('dynamic30');
+  const drops = [];
+  for (let i = 1; i < closes.length; i++) {
+    const ch = (closes[i] - closes[i-1]) / closes[i-1] * 100;
+    if (ch < 0) drops.push(Math.abs(ch));
+  }
+  drops.sort((a, b) => b - a);
+  const top30 = drops.slice(0, 30);
+  const avg = top30.length ? top30.reduce((a, b) => a + b, 0) / top30.length : 8.0;
+  drawdownCache[currentTicker] = { avg, ts: Date.now() };
+  updateDynUI(avg, price);
+}
 
-        dynamicGuide.classList.add('loading');
-        dynamicPercent.innerText = '계산중...';
+function updateDynUI(avg, price) {
+  document.getElementById('dynamicGuide').classList.remove('loading');
+  document.getElementById('dynamicPercent').innerText = `-${avg.toFixed(1)}% 하락시`;
+  document.getElementById('dynamic30').innerText = `$${(price * (1 - avg/100)).toFixed(2)}`;
+}
 
-        const cached = drawdownCache[currentTicker];
-        if (cached && (Date.now() - cached.timestamp < 3600000)) {
-            updateDynamicUI(cached.avg30, currentPrice);
-            return;
-        }
+// ─── 5% Strategy ─────────────────────────────────────────
+function add() {
+  const p = parseFloat(document.getElementById('p').value);
+  const q = parseInt(document.getElementById('q').value);
+  if (!p || !q) return toast('⚠️ 매수가와 수량을 입력하세요.');
+  const items = S.getTrades(currentTicker);
+  items.push({ id: Date.now(), p: p.toFixed(2), q, t: (p * 1.05).toFixed(2), strategy: '5%' });
+  S.setTrades(currentTicker, items);
+  document.getElementById('p').value = '';
+  document.getElementById('q').value = '';
+  render();
+  toast('✅ 매수 기록 추가됨');
+}
 
-        // 1년 데이터는 Yahoo만 가져올 수 있음 - 여러 프록시 시도
-        const rangeAttempts = [
-            async () => {
-                const url = `https://query1.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1y`;
-                const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-                const json = await res.json();
-                return json.chart.result[0].indicators.quote[0].close;
-            },
-            async () => {
-                const url = `https://query1.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1y`;
-                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-                const json = await res.json();
-                const data = JSON.parse(json.contents);
-                return data.chart.result[0].indicators.quote[0].close;
-            },
-            async () => {
-                const url = `https://query2.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1y`;
-                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-                const json = await res.json();
-                const data = JSON.parse(json.contents);
-                return data.chart.result[0].indicators.quote[0].close;
-            }
-        ];
+function remove(id) {
+  const items = S.getTrades(currentTicker);
+  const item = items.find(i => i.id === id);
+  if (!item) return;
 
-        let closes = null;
-        for (const fn of rangeAttempts) {
-            try {
-                const raw = await fn();
-                closes = raw.filter(c => c !== null && !isNaN(c));
-                if (closes.length >= 10) break;
-            } catch (e) {
-                console.warn('1년 데이터 시도 실패:', e.message);
-            }
-        }
+  // 수익 계산
+  const buyAmt = parseFloat(item.p) * item.q;
+  const sellAmt = parseFloat(item.t) * item.q;
+  const profit = sellAmt - buyAmt;
+  const pct = ((profit / buyAmt) * 100).toFixed(2);
 
-        if (!closes || closes.length < 10) {
-            updateDynamicUI(8.0, currentPrice);
-            return;
-        }
+  if (confirm(`✅ 매도 체결 확인\n\n${currentTicker} ${item.q}주\n매수: $${item.p} → 익절: $${item.t}\n수익: $${profit.toFixed(2)} (+${pct}%)\n\n수익 기록에 저장합니까?`)) {
+    S.setTrades(currentTicker, items.filter(i => i.id !== id));
+    // 수익 기록 저장
+    const hist = S.getHistory();
+    hist.push({
+      id: Date.now(),
+      ticker: currentTicker,
+      strategy: '5%',
+      p: item.p,
+      q: item.q,
+      t: item.t,
+      profit: profit.toFixed(2),
+      pct,
+      date: new Date().toLocaleDateString('ko-KR'),
+      ts: Date.now()
+    });
+    S.setHistory(hist);
+    render();
+    toast(`💰 수익 $${profit.toFixed(2)} 기록 완료!`);
+  }
+}
 
-        const dailyDrops = [];
-        for (let i = 1; i < closes.length; i++) {
-            const change = ((closes[i] - closes[i - 1]) / closes[i - 1]) * 100;
-            if (change < 0) dailyDrops.push(Math.abs(change));
-        }
+function render() {
+  const items = S.getTrades(currentTicker);
+  const root = document.getElementById('list');
+  if (!items.length) {
+    root.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div>매수 기록이 없습니다</div>`;
+    return;
+  }
+  root.innerHTML = [...items].reverse().map(i => {
+    const profit = ((parseFloat(i.t) - parseFloat(i.p)) * i.q).toFixed(2);
+    return `
+      <div class="trade-item">
+        <div class="trade-info">
+          <div class="trade-ticker">${currentTicker} · 5% 전략</div>
+          <div class="trade-buy">매수 $${i.p} × ${i.q}주 = $${(parseFloat(i.p)*i.q).toFixed(2)}</div>
+          <div class="trade-sell-label">LOC 익절 예약가</div>
+          <div class="trade-sell-price">$${i.t}</div>
+          <div class="trade-profit-badge">+$${profit} 예상 수익</div>
+        </div>
+        <button class="check-btn" onclick="remove(${i.id})">✓</button>
+      </div>`;
+  }).join('');
+}
 
-        dailyDrops.sort((a, b) => b - a);
-        const top30 = dailyDrops.slice(0, 30);
-        const avg30 = top30.length > 0 ? top30.reduce((a, b) => a + b, 0) / top30.length : 8.0;
+// ─── 10% Daily Strategy ───────────────────────────────────
+function calcSimulation() {
+  const p = parseFloat(document.getElementById('sim-price').value);
+  const q = parseInt(document.getElementById('sim-qty').value);
+  if (!p || !q) return toast('⚠️ 매수가와 수량을 입력하세요.');
 
-        drawdownCache[currentTicker] = { avg30, timestamp: Date.now() };
-        updateDynamicUI(avg30, currentPrice);
-    }
+  const buyAmt = p * q;
+  const target = p * 1.10;
+  const sellAmt = target * q;
+  const profit = sellAmt - buyAmt;
 
-    function updateDynamicUI(avgDrop, price) {
-        document.getElementById('dynamicGuide').classList.remove('loading');
-        document.getElementById('dynamicPercent').innerText = `-${avgDrop.toFixed(1)}% 하락시`;
-        document.getElementById('dynamic30').innerText = `$${(price * (1 - avgDrop / 100)).toFixed(2)}`;
-    }
+  document.getElementById('sim-result').innerHTML = `
+    <table class="result-table" style="margin-top:8px;">
+      <tr><th>항목</th><th>금액</th></tr>
+      <tr><td>매수 금액</td><td>$${buyAmt.toFixed(2)}</td></tr>
+      <tr class="row-sell"><td>목표가 (10%↑)</td><td class="highlight">$${target.toFixed(2)}</td></tr>
+      <tr class="row-sell"><td>매도 금액</td><td class="highlight">$${sellAmt.toFixed(2)}</td></tr>
+      <tr><td>예상 수익</td><td class="highlight">+$${profit.toFixed(2)}</td></tr>
+      <tr><td>수익률</td><td class="highlight">+10.0%</td></tr>
+    </table>`;
+}
 
-    function add() {
-        const p = document.getElementById('p').value;
-        const q = document.getElementById('q').value;
-        if (!p || !q) return alert("매수가와 수량을 입력하세요.");
-        const items = getCurrentItems();
-        items.push({ id: Date.now(), p: parseFloat(p).toFixed(2), q, t: (parseFloat(p) * 1.05).toFixed(2) });
-        saveCurrentItems(items);
-        document.getElementById('p').value = '';
-        document.getElementById('q').value = '';
-        render();
-    }
+function addDaily() {
+  const p = parseFloat(document.getElementById('d-p').value);
+  const q = parseInt(document.getElementById('d-q').value);
+  if (!p || !q) return toast('⚠️ 매수가와 수량을 입력하세요.');
+  const items = S.getDailyTrades(currentTicker);
+  items.push({ id: Date.now(), p: p.toFixed(2), q, t: (p * 1.10).toFixed(2), strategy: '10%' });
+  S.setDailyTrades(currentTicker, items);
+  document.getElementById('d-p').value = '';
+  document.getElementById('d-q').value = '';
+  renderDaily();
+  toast('✅ 10% 전략 기록 추가됨');
+}
 
-    function remove(id) {
-        if (confirm("매도가 체결되었습니까? 목록에서 삭제합니다.")) {
-            saveCurrentItems(getCurrentItems().filter(i => i.id !== id));
-            render();
-        }
-    }
+function removeDaily(id) {
+  const items = S.getDailyTrades(currentTicker);
+  const item = items.find(i => i.id === id);
+  if (!item) return;
 
-    function render() {
-        const items = getCurrentItems();
-        const root = document.getElementById('list');
-        root.innerHTML = items.length ? '' : '<div style="text-align:center; color:#ccc; padding:40px; font-size:0.9rem;">매수 기록이 없습니다.</div>';
-        [...items].reverse().forEach(i => {
-            root.innerHTML += `
-                <div class="trade-item">
-                    <div class="item-info">
-                        <span class="buy-record">${currentTicker} 매수: $${i.p} (${i.q}주)</span>
-                        <span class="sell-target-label">5% 익절 예약가 (LOC)</span>
-                        <span class="sell-target-price">$${i.t}</span>
-                    </div>
-                    <button class="check-btn" onclick="remove(${i.id})">✓</button>
-                </div>`;
-        });
-    }
+  const buyAmt = parseFloat(item.p) * item.q;
+  const sellAmt = parseFloat(item.t) * item.q;
+  const profit = sellAmt - buyAmt;
+  const pct = ((profit / buyAmt) * 100).toFixed(2);
 
-    window.onload = () => { fetchStockPrice(); render(); };
+  if (confirm(`✅ 10% 익절 체결 확인\n\n${currentTicker} ${item.q}주\n매수: $${item.p} → 익절: $${item.t}\n수익: $${profit.toFixed(2)} (+${pct}%)\n\n수익 기록에 저장합니까?`)) {
+    S.setDailyTrades(currentTicker, items.filter(i => i.id !== id));
+    const hist = S.getHistory();
+    hist.push({
+      id: Date.now(),
+      ticker: currentTicker,
+      strategy: '10%',
+      p: item.p,
+      q: item.q,
+      t: item.t,
+      profit: profit.toFixed(2),
+      pct,
+      date: new Date().toLocaleDateString('ko-KR'),
+      ts: Date.now()
+    });
+    S.setHistory(hist);
+    renderDaily();
+    toast(`💰 수익 $${profit.toFixed(2)} 기록 완료!`);
+  }
+}
+
+function renderDaily() {
+  const items = S.getDailyTrades(currentTicker);
+  const root = document.getElementById('daily-list');
+  if (!items.length) {
+    root.innerHTML = `<div class="empty-state"><div class="empty-icon">🔥</div>10% 전략 기록이 없습니다</div>`;
+    return;
+  }
+  root.innerHTML = [...items].reverse().map(i => {
+    const profit = ((parseFloat(i.t) - parseFloat(i.p)) * i.q).toFixed(2);
+    return `
+      <div class="trade-item" style="border-left-color:var(--yellow);">
+        <div class="trade-info">
+          <div class="trade-ticker" style="color:var(--yellow);">${currentTicker} · 10% 전략</div>
+          <div class="trade-buy">매수 $${i.p} × ${i.q}주 = $${(parseFloat(i.p)*i.q).toFixed(2)}</div>
+          <div class="trade-sell-label">익절 목표가</div>
+          <div class="trade-sell-price" style="color:var(--yellow);">$${i.t}</div>
+          <div class="trade-profit-badge" style="background:rgba(255,209,102,0.12);color:var(--yellow);border-color:rgba(255,209,102,0.3);">+$${profit} 예상 수익</div>
+        </div>
+        <button class="check-btn" onclick="removeDaily(${i.id})">✓</button>
+      </div>`;
+  }).join('');
+}
+
+// ─── History ──────────────────────────────────────────────
+function renderHistory() {
+  const hist = S.getHistory().sort((a, b) => b.ts - a.ts);
+  const totalProfit = hist.reduce((s, h) => s + parseFloat(h.profit), 0);
+  const totalInvested = hist.reduce((s, h) => s + parseFloat(h.p) * h.q, 0);
+  const avgReturn = hist.length ? hist.reduce((s, h) => s + parseFloat(h.pct), 0) / hist.length : 0;
+
+  document.getElementById('total-profit').innerText = `$${totalProfit.toFixed(2)}`;
+  document.getElementById('total-trades').innerText = `${hist.length}회`;
+  document.getElementById('avg-return').innerText = `${avgReturn.toFixed(2)}%`;
+  document.getElementById('total-invested').innerText = `$${totalInvested.toFixed(2)}`;
+
+  const root = document.getElementById('history-list');
+  if (!hist.length) {
+    root.innerHTML = `<div class="empty-state"><div class="empty-icon">💰</div>수익 기록이 없습니다</div>`;
+    return;
+  }
+  root.innerHTML = hist.map(h => {
+    const profitN = parseFloat(h.profit);
+    const isPos = profitN >= 0;
+    const stBadge = h.strategy === '10%'
+      ? `<span style="background:rgba(255,209,102,0.15);color:var(--yellow);border:1px solid rgba(255,209,102,0.3);padding:1px 6px;border-radius:10px;font-size:0.6rem;font-weight:700;margin-left:6px;">10%</span>`
+      : `<span style="background:rgba(79,142,247,0.15);color:var(--accent);border:1px solid rgba(79,142,247,0.3);padding:1px 6px;border-radius:10px;font-size:0.6rem;font-weight:700;margin-left:6px;">5%</span>`;
+    return `
+      <div class="history-item">
+        <div class="history-info">
+          <div class="history-ticker">${h.ticker} ${stBadge}</div>
+          <div class="history-detail">$${h.p} × ${h.q}주 → $${h.t}</div>
+          <div class="history-date">${h.date}</div>
+        </div>
+        <div class="history-profit">
+          <div class="history-profit-amt" style="color:${isPos ? 'var(--green)' : 'var(--red)'}">
+            ${isPos ? '+' : ''}$${profitN.toFixed(2)}
+          </div>
+          <div class="history-profit-pct" style="color:${isPos ? 'var(--green)' : 'var(--red)'}">
+            ${isPos ? '+' : ''}${h.pct}%
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function exportCSV() {
+  const hist = S.getHistory().sort((a, b) => b.ts - a.ts);
+  if (!hist.length) return toast('수익 기록이 없습니다.');
+
+  const header = '날짜,종목,전략,매수가,수량,익절가,매수금액,매도금액,수익($),수익률(%)';
+  const rows = hist.map(h => {
+    const buyAmt = (parseFloat(h.p) * h.q).toFixed(2);
+    const sellAmt = (parseFloat(h.t) * h.q).toFixed(2);
+    return `${h.date},${h.ticker},${h.strategy},${h.p},${h.q},${h.t},${buyAmt},${sellAmt},${h.profit},${h.pct}`;
+  });
+
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `매도수익기록_${new Date().toLocaleDateString('ko-KR').replace(/\./g,'').replace(/ /g,'')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('📥 CSV 다운로드 완료!');
+}
+
+function clearHistory() {
+  if (confirm('⚠️ 모든 수익 기록을 삭제합니까?\n이 작업은 되돌릴 수 없습니다.')) {
+    S.setHistory([]);
+    renderHistory();
+    toast('🗑️ 기록 초기화 완료');
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────
+window.onload = () => {
+  fetchStockPrice();
+  render();
+  renderDaily();
+};
 </script>
 </body>
 </html>
