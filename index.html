@@ -170,14 +170,16 @@ body {
 .guide-box-price { font-family: var(--font-display); font-size: 1.5rem; color: var(--green); letter-spacing: 1px; }
 .guide-box-sub { font-size: 0.6rem; color: var(--text3); margin-top: 4px; }
 
-/* ── Buy Now Box ── */
-.buy-now-box {
-  margin-top: 10px; background: rgba(0,214,143,0.08);
-  border: 1px solid rgba(0,214,143,0.25);
+/* ── LOC Notice Box ── */
+.loc-notice-box {
+  margin-top: 10px;
+  background: rgba(79,142,247,0.08);
+  border: 1px solid rgba(79,142,247,0.25);
   border-radius: 12px; padding: 12px; text-align: center;
 }
-.buy-now-label { font-size: 0.7rem; color: var(--text3); font-weight: 700; }
-.buy-now-price { font-family: var(--font-display); font-size: 2rem; color: var(--green); letter-spacing: 1px; margin-top: 4px; }
+.loc-notice-label { font-size: 0.7rem; color: var(--text3); font-weight: 700; }
+.loc-notice-price { font-family: var(--font-display); font-size: 2rem; color: var(--accent); letter-spacing: 1px; margin-top: 4px; }
+.loc-notice-sub { font-size: 0.65rem; color: var(--text3); margin-top: 4px; line-height: 1.5; }
 
 /* ── Input Row ── */
 .input-grid { display: grid; grid-template-columns: 1.3fr 1fr 50px; gap: 8px; }
@@ -213,12 +215,22 @@ body {
 .trade-ticker { font-size: 0.68rem; color: var(--text3); font-weight: 700; letter-spacing: 1px; }
 .trade-buy { font-size: 0.85rem; color: var(--text2); margin: 3px 0; }
 .trade-sell-label { font-size: 0.65rem; color: var(--text3); font-weight: 700; letter-spacing: 1px; margin-top: 6px; }
-.trade-sell-price { font-family: var(--font-display); font-size: 1.6rem; color: var(--green); letter-spacing: 1px; line-height: 1.1; }
+.trade-sell-price { font-family: var(--font-display); font-size: 1.6rem; color: var(--accent); letter-spacing: 1px; line-height: 1.1; }
 .trade-profit-badge {
   font-size: 0.68rem; font-weight: 700;
+  padding: 2px 7px; border-radius: 20px; display: inline-block; margin-top: 4px;
+}
+.trade-profit-badge.pos {
   background: rgba(0,214,143,0.12); color: var(--green);
   border: 1px solid rgba(0,214,143,0.3);
-  padding: 2px 7px; border-radius: 20px; display: inline-block; margin-top: 4px;
+}
+.trade-profit-badge.neg {
+  background: rgba(255,82,82,0.12); color: var(--red);
+  border: 1px solid rgba(255,82,82,0.3);
+}
+.trade-profit-badge.neutral {
+  background: rgba(79,142,247,0.1); color: var(--text3);
+  border: 1px solid rgba(79,142,247,0.2);
 }
 .check-btn {
   width: 42px; height: 42px; border-radius: 50%;
@@ -287,33 +299,6 @@ body {
 .logic-explain p { font-size: 0.78rem; color: var(--text2); line-height: 1.7; }
 .logic-explain strong { color: var(--accent); }
 
-.simulation-row {
-  display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
-}
-.simulation-row input {
-  flex: 1; background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 10px; color: var(--text); padding: 11px 12px;
-  font-size: 0.9rem; font-family: var(--font-body); outline: none;
-}
-.simulation-row input:focus { border-color: var(--yellow); }
-.calc-btn {
-  background: linear-gradient(135deg, var(--yellow), #ffb700);
-  border: none; border-radius: 10px; color: #000;
-  font-weight: 900; font-size: 0.85rem; font-family: var(--font-body);
-  padding: 11px 16px; cursor: pointer; white-space: nowrap;
-}
-
-.result-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-.result-table th {
-  background: var(--surface2); color: var(--text3);
-  font-weight: 700; padding: 8px 10px;
-  font-size: 0.65rem; letter-spacing: 1px; text-align: left;
-}
-.result-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
-.result-table tr:last-child td { border-bottom: none; }
-.result-table .highlight { color: var(--green); font-weight: 700; }
-.result-table .row-sell { background: rgba(0,214,143,0.05); }
-
 /* ── Empty State ── */
 .empty-state { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 0.85rem; }
 .empty-icon { font-size: 2rem; margin-bottom: 10px; opacity: 0.4; }
@@ -331,6 +316,71 @@ body {
   opacity: 0; transition: all 0.3s; pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── LOC 수동입력 모달 ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%; max-width: 340px;
+  transform: translateY(16px);
+  transition: transform 0.2s;
+}
+.modal-overlay.show .modal-box { transform: translateY(0); }
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem; letter-spacing: 1.5px;
+  color: var(--text); margin-bottom: 6px;
+}
+.modal-sub {
+  font-size: 0.72rem; color: var(--text3); margin-bottom: 18px; line-height: 1.5;
+}
+.modal-info-row {
+  display: flex; justify-content: space-between;
+  font-size: 0.8rem; color: var(--text2);
+  margin-bottom: 6px;
+}
+.modal-info-row span:last-child { color: var(--text); font-weight: 700; }
+.modal-divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+.modal-label { font-size: 0.68rem; color: var(--text3); font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; }
+.modal-input {
+  width: 100%;
+  background: var(--surface2); border: 1px solid var(--accent);
+  border-radius: 12px; color: var(--text);
+  padding: 13px 14px; font-size: 1.1rem;
+  font-family: var(--font-body); outline: none;
+  margin-bottom: 8px;
+}
+.modal-preview {
+  font-size: 0.78rem; color: var(--text3);
+  min-height: 20px; margin-bottom: 16px;
+  text-align: center;
+}
+.modal-preview.pos { color: var(--green); }
+.modal-preview.neg { color: var(--red); }
+.modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modal-btn-cancel {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; color: var(--text2);
+  font-family: var(--font-body); font-weight: 700; font-size: 0.88rem;
+  padding: 13px; cursor: pointer;
+}
+.modal-btn-confirm {
+  background: linear-gradient(135deg, var(--green), #00b87a);
+  border: none; border-radius: 12px; color: #000;
+  font-family: var(--font-body); font-weight: 900; font-size: 0.88rem;
+  padding: 13px; cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -341,7 +391,7 @@ body {
     <button class="refresh-btn" onclick="fetchStockPrice()"><span id="refreshIcon">🔄</span> 새로고침</button>
   </div>
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('main', this)">📊 5% 매도</button>
+    <button class="tab-btn active" onclick="switchTab('main', this)">📊 LOC 매도</button>
     <button class="tab-btn" onclick="switchTab('daily', this)">🔥 10% 전략</button>
     <button class="tab-btn" onclick="switchTab('history', this)">💰 수익 기록</button>
   </div>
@@ -349,7 +399,7 @@ body {
 
 <div class="container">
 
-  <!-- ═══════════════ TAB 1: 5% 매도 전략 ═══════════════ -->
+  <!-- ═══════════════ TAB 1: LOC 매도 전략 ═══════════════ -->
   <div class="tab-panel active" id="tab-main">
 
     <!-- 종목 선택 -->
@@ -390,9 +440,11 @@ body {
         </div>
       </div>
 
-      <div class="buy-now-box">
-        <div class="buy-now-label">💰 오늘 매수 시 익절가 (5%)</div>
-        <div class="buy-now-price" id="currentBuy">$--</div>
+      <!-- LOC 안내 -->
+      <div class="loc-notice-box">
+        <div class="loc-notice-label">📌 LOC 매도 기준가 (현재 시세)</div>
+        <div class="loc-notice-price" id="currentLocPrice">$--</div>
+        <div class="loc-notice-sub">✓ 체크 시점의 현재가로 LOC 매도가 결정됩니다<br>새로고침 후 체크하세요</div>
       </div>
     </div>
 
@@ -412,7 +464,6 @@ body {
   <!-- ═══════════════ TAB 2: 10% 전략 ═══════════════ -->
   <div class="tab-panel" id="tab-daily">
 
-    <!-- 전략 설명 -->
     <div class="logic-explain" style="margin-bottom:12px;">
       <p>
         <strong>전략 로직:</strong><br>
@@ -423,7 +474,6 @@ body {
       </p>
     </div>
 
-    <!-- 현재가 + 평단 대시보드 -->
     <div class="card" style="margin-bottom:12px;">
       <div class="card-title">포지션 현황 — <span id="daily-ticker-label" style="color:var(--yellow);">SOXL</span></div>
 
@@ -446,7 +496,6 @@ body {
         </div>
       </div>
 
-      <!-- 매도 목표가 강조 -->
       <div id="daily-sell-target-box" style="
         background: rgba(0,214,143,0.08);
         border: 1px solid rgba(0,214,143,0.3);
@@ -458,13 +507,11 @@ body {
         <div style="font-size:0.72rem;color:var(--text2);margin-top:6px;" id="daily-profit-preview">--</div>
       </div>
 
-      <!-- 현재가 vs 목표 상태 -->
       <div id="daily-status-bar" style="margin-top:10px; text-align:center; font-size:0.8rem; font-weight:700; color:var(--text3);">
         포지션 없음
       </div>
     </div>
 
-    <!-- 매수 기록 추가 -->
     <div class="card">
       <div class="card-title">📅 LOC 매수 기록 추가 (전날 종가 기준)</div>
       <div style="display:grid; grid-template-columns:1fr 80px 80px 44px; gap:8px; align-items:center;">
@@ -476,10 +523,7 @@ body {
       <div style="font-size:0.65rem;color:var(--text3);margin-top:6px;">날짜는 매수 실행일 (전날 종가 LOC = 당일 장 시작 전 예약)</div>
     </div>
 
-    <!-- 매도 실행 버튼 -->
     <div id="daily-sell-btn-area"></div>
-
-    <!-- 개별 매수 리스트 -->
     <div id="daily-list"></div>
   </div>
 
@@ -511,6 +555,27 @@ body {
     <button class="export-btn" onclick="clearHistory()" style="margin-top:6px; color:var(--red); border-color:rgba(255,82,82,0.3);">🗑️ 수익 기록 초기화</button>
   </div>
 
+</div>
+
+<!-- ── LOC 수동입력 모달 ── -->
+<div class="modal-overlay" id="locModal">
+  <div class="modal-box">
+    <div class="modal-title">📌 LOC 매도 체결</div>
+    <div class="modal-sub">전날 종가를 직접 입력하거나<br>자동 시세를 확인하세요.</div>
+    <div class="modal-info-row"><span>종목</span><span id="m-ticker">--</span></div>
+    <div class="modal-info-row"><span>매수가</span><span id="m-buy">--</span></div>
+    <div class="modal-info-row"><span>수량</span><span id="m-qty">--</span></div>
+    <div class="modal-info-row"><span>자동 시세</span><span id="m-auto">--</span></div>
+    <hr class="modal-divider">
+    <div class="modal-label">LOC 매도가 입력 ($)</div>
+    <input class="modal-input" type="number" id="m-price" step="0.01" placeholder="매도가 직접 입력"
+      oninput="updateModalPreview()">
+    <div class="modal-preview" id="m-preview"></div>
+    <div class="modal-btns">
+      <button class="modal-btn-cancel" onclick="closeModal()">취소</button>
+      <button class="modal-btn-confirm" onclick="confirmSell()">체결 확인</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -621,10 +686,13 @@ async function fetchStockPrice() {
   document.getElementById('price').innerText = `$${price.toFixed(2)}`;
   document.getElementById('sourceBadge').innerText = label;
   document.getElementById('fixed8').innerText = `$${(price * 0.92).toFixed(2)}`;
-  document.getElementById('currentBuy').innerText = `$${(price * 1.05).toFixed(2)}`;
+  document.getElementById('currentLocPrice').innerText = `$${price.toFixed(2)}`;
   document.getElementById('daily-current-price').innerText = `$${price.toFixed(2)}`;
   document.getElementById('status').innerText = '업데이트: ' + new Date().toLocaleTimeString();
-  renderDaily(); // 현재가 기준 목표 도달 여부 갱신
+
+  // 매수 리스트 재렌더 (현재가 기반 수익 재계산)
+  render();
+  renderDaily();
 
   calculateDrawdown(price);
 }
@@ -679,13 +747,15 @@ function updateDynUI(avg, price) {
   document.getElementById('dynamic30').innerText = `$${(price * (1 - avg/100)).toFixed(2)}`;
 }
 
-// ─── 5% Strategy ─────────────────────────────────────────
+// ─── LOC 매도 전략 (체크 시점 현재가 기준) ────────────────
 function add() {
   const p = parseFloat(document.getElementById('p').value);
   const q = parseInt(document.getElementById('q').value);
   if (!p || !q) return toast('⚠️ 매수가와 수량을 입력하세요.');
+
   const items = S.getTrades(currentTicker);
-  items.push({ id: Date.now(), p: p.toFixed(2), q, t: (p * 1.05).toFixed(2), strategy: '5%' });
+  // t(익절가)는 저장하지 않음 — 체크 시점의 currentPrice 로 결정
+  items.push({ id: Date.now(), p: p.toFixed(2), q });
   S.setTrades(currentTicker, items);
   document.getElementById('p').value = '';
   document.getElementById('q').value = '';
@@ -693,56 +763,138 @@ function add() {
   toast('✅ 매수 기록 추가됨');
 }
 
+// ─── LOC 모달 상태 ────────────────────────────────────────
+let _modalItemId = null;
+
 function remove(id) {
   const items = S.getTrades(currentTicker);
-  const item = items.find(i => i.id === id);
+  const item  = items.find(i => i.id === id);
   if (!item) return;
 
-  // 수익 계산
-  const buyAmt = parseFloat(item.p) * item.q;
-  const sellAmt = parseFloat(item.t) * item.q;
-  const profit = sellAmt - buyAmt;
-  const pct = ((profit / buyAmt) * 100).toFixed(2);
+  _modalItemId = id;
 
-  if (confirm(`✅ 매도 체결 확인\n\n${currentTicker} ${item.q}주\n매수: $${item.p} → 익절: $${item.t}\n수익: $${profit.toFixed(2)} (+${pct}%)\n\n수익 기록에 저장합니까?`)) {
-    S.setTrades(currentTicker, items.filter(i => i.id !== id));
-    // 수익 기록 저장
-    const hist = S.getHistory();
-    hist.push({
-      id: Date.now(),
-      ticker: currentTicker,
-      strategy: '5%',
-      p: item.p,
-      q: item.q,
-      t: item.t,
-      profit: profit.toFixed(2),
-      pct,
-      date: new Date().toLocaleDateString('ko-KR'),
-      ts: Date.now()
-    });
-    S.setHistory(hist);
-    render();
-    toast(`💰 수익 $${profit.toFixed(2)} 기록 완료!`);
+  // 모달 정보 채우기
+  document.getElementById('m-ticker').innerText = currentTicker;
+  document.getElementById('m-buy').innerText    = `$${item.p} × ${item.q}주`;
+  document.getElementById('m-qty').innerText    = `${item.q}주`;
+  document.getElementById('m-auto').innerText   = currentPrice > 0 ? `$${currentPrice.toFixed(2)}` : '없음 (직접 입력)';
+
+  // 자동 시세가 있으면 input에 미리 채움
+  const priceInput = document.getElementById('m-price');
+  priceInput.value = currentPrice > 0 ? currentPrice.toFixed(2) : '';
+
+  document.getElementById('m-preview').innerText = '';
+  document.getElementById('m-preview').className = 'modal-preview';
+  updateModalPreview();
+
+  document.getElementById('locModal').classList.add('show');
+  priceInput.focus();
+}
+
+function updateModalPreview() {
+  const id    = _modalItemId;
+  const items = S.getTrades(currentTicker);
+  const item  = items.find(i => i.id === id);
+  if (!item) return;
+
+  const locPrice = parseFloat(document.getElementById('m-price').value);
+  const preview  = document.getElementById('m-preview');
+
+  if (!locPrice || locPrice <= 0) {
+    preview.innerText = '';
+    preview.className = 'modal-preview';
+    return;
   }
+
+  const buyAmt = parseFloat(item.p) * item.q;
+  const profit = (locPrice - parseFloat(item.p)) * item.q;
+  const pct    = ((profit / buyAmt) * 100).toFixed(2);
+  const sign   = profit >= 0 ? '+' : '';
+  const isPos  = profit >= 0;
+
+  preview.innerText  = `예상 수익: ${sign}$${profit.toFixed(2)} (${sign}${pct}%)`;
+  preview.className  = `modal-preview ${isPos ? 'pos' : 'neg'}`;
+}
+
+function closeModal() {
+  document.getElementById('locModal').classList.remove('show');
+  _modalItemId = null;
+}
+
+function confirmSell() {
+  const id    = _modalItemId;
+  const items = S.getTrades(currentTicker);
+  const item  = items.find(i => i.id === id);
+  if (!item) return closeModal();
+
+  const locPrice = parseFloat(document.getElementById('m-price').value);
+  if (!locPrice || locPrice <= 0) {
+    document.getElementById('m-price').style.borderColor = 'var(--red)';
+    return;
+  }
+  document.getElementById('m-price').style.borderColor = 'var(--accent)';
+
+  const buyAmt = parseFloat(item.p) * item.q;
+  const profit = (locPrice - parseFloat(item.p)) * item.q;
+  const pct    = ((profit / buyAmt) * 100).toFixed(2);
+  const sign   = profit >= 0 ? '+' : '';
+
+  S.setTrades(currentTicker, items.filter(i => i.id !== id));
+
+  const hist = S.getHistory();
+  hist.push({
+    id: Date.now(),
+    ticker: currentTicker,
+    strategy: 'LOC',
+    p: item.p,
+    q: item.q,
+    t: locPrice.toFixed(2),
+    profit: profit.toFixed(2),
+    pct,
+    date: new Date().toLocaleDateString('ko-KR'),
+    ts: Date.now()
+  });
+  S.setHistory(hist);
+
+  closeModal();
+  render();
+  toast(`💰 LOC 체결 ${sign}$${profit.toFixed(2)} 기록 완료!`);
 }
 
 function render() {
   const items = S.getTrades(currentTicker);
-  const root = document.getElementById('list');
+  const root  = document.getElementById('list');
+
   if (!items.length) {
     root.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div>매수 기록이 없습니다</div>`;
     return;
   }
+
   root.innerHTML = [...items].reverse().map(i => {
-    const profit = ((parseFloat(i.t) - parseFloat(i.p)) * i.q).toFixed(2);
+    // 현재가 기준 실시간 수익 표시
+    const hasPrice  = currentPrice > 0;
+    const locPrice  = hasPrice ? currentPrice : 0;
+    const buyAmt    = parseFloat(i.p) * i.q;
+    const sellAmt   = hasPrice ? locPrice * i.q : 0;
+    const profit    = hasPrice ? sellAmt - buyAmt : 0;
+    const pct       = hasPrice ? ((profit / buyAmt) * 100).toFixed(2) : null;
+    const sign      = profit >= 0 ? '+' : '';
+    const isPos     = profit >= 0;
+
+    const locPriceStr   = hasPrice ? `$${locPrice.toFixed(2)}` : '-- (새로고침 필요)';
+    const profitStr     = hasPrice
+      ? `${sign}$${profit.toFixed(2)} (${sign}${pct}%)`
+      : '시세 로딩 필요';
+    const badgeClass    = !hasPrice ? 'neutral' : isPos ? 'pos' : 'neg';
+
     return `
       <div class="trade-item">
         <div class="trade-info">
-          <div class="trade-ticker">${currentTicker} · 5% 전략</div>
-          <div class="trade-buy">매수 $${i.p} × ${i.q}주 = $${(parseFloat(i.p)*i.q).toFixed(2)}</div>
-          <div class="trade-sell-label">LOC 익절 예약가</div>
-          <div class="trade-sell-price">$${i.t}</div>
-          <div class="trade-profit-badge">+$${profit} 예상 수익</div>
+          <div class="trade-ticker">${currentTicker} · LOC 매도</div>
+          <div class="trade-buy">매수 $${i.p} × ${i.q}주 = $${buyAmt.toFixed(2)}</div>
+          <div class="trade-sell-label">LOC 매도가 (현재 시세 기준)</div>
+          <div class="trade-sell-price">${locPriceStr}</div>
+          <div class="trade-profit-badge ${badgeClass}">${hasPrice ? (isPos ? '▲ ' : '▼ ') : ''}${profitStr}</div>
         </div>
         <button class="check-btn" onclick="remove(${i.id})">✓</button>
       </div>`;
@@ -750,20 +902,16 @@ function render() {
 }
 
 // ─── 10% 전략 (평단 기준) ─────────────────────────────────
-
-// 평단 계산 유틸
 function calcAvgCost(items) {
-  const totalQty = items.reduce((s, i) => s + i.q, 0);
+  const totalQty  = items.reduce((s, i) => s + i.q, 0);
   const totalCost = items.reduce((s, i) => s + parseFloat(i.p) * i.q, 0);
   return { totalQty, totalCost, avgCost: totalQty > 0 ? totalCost / totalQty : 0 };
 }
 
-// 날짜 input 오늘 기본값 세팅
 function initDailyDateInput() {
   const el = document.getElementById('d-date');
   if (el && !el.value) {
-    const today = new Date();
-    el.value = today.toISOString().split('T')[0];
+    el.value = new Date().toISOString().split('T')[0];
   }
 }
 
@@ -776,14 +924,7 @@ function addDaily() {
   if (!q || q <= 0) return toast('⚠️ 수량을 입력하세요.');
 
   const items = S.getDailyTrades(currentTicker);
-  items.push({
-    id: Date.now(),
-    date: dateVal,
-    p: p.toFixed(2),
-    q,
-    strategy: '10%'
-  });
-  // 날짜 순 정렬
+  items.push({ id: Date.now(), date: dateVal, p: p.toFixed(2), q, strategy: '10%' });
   items.sort((a, b) => a.date.localeCompare(b.date));
   S.setDailyTrades(currentTicker, items);
 
@@ -805,10 +946,10 @@ function executeAllSell() {
   if (!items.length) return;
 
   const { totalQty, totalCost, avgCost } = calcAvgCost(items);
-  const locTarget = avgCost * 1.10;
-  const sellAmt = locTarget * totalQty;
-  const profit = sellAmt - totalCost;
-  const pct = ((profit / totalCost) * 100).toFixed(2);
+  const locTarget    = avgCost * 1.10;
+  const sellAmt      = locTarget * totalQty;
+  const profit       = sellAmt - totalCost;
+  const pct          = ((profit / totalCost) * 100).toFixed(2);
 
   if (!confirm(
     `✅ LOC 전량 매도 체결 확인\n\n` +
@@ -821,13 +962,12 @@ function executeAllSell() {
     `수익 기록에 저장하고 포지션을 초기화합니까?`
   )) return;
 
-  // 수익 기록 저장
   const hist = S.getHistory();
   hist.push({
     id: Date.now(),
     ticker: currentTicker,
     strategy: '10%',
-    p: avgCost.toFixed(2),        // 평단
+    p: avgCost.toFixed(2),
     q: totalQty,
     t: locTarget.toFixed(2),
     profit: profit.toFixed(2),
@@ -837,8 +977,6 @@ function executeAllSell() {
     note: `${items.length}회 분할매수 평단`
   });
   S.setHistory(hist);
-
-  // 포지션 초기화
   S.setDailyTrades(currentTicker, []);
   renderDaily();
   toast(`💰 전량 매도 완료! 수익 $${profit.toFixed(2)}`);
@@ -847,65 +985,50 @@ function executeAllSell() {
 function renderDaily() {
   initDailyDateInput();
 
-  // 티커 라벨 업데이트
   const lbl = document.getElementById('daily-ticker-label');
   if (lbl) lbl.innerText = currentTicker;
 
   const items = S.getDailyTrades(currentTicker);
-  const root = document.getElementById('daily-list');
+  const root  = document.getElementById('daily-list');
   const btnArea = document.getElementById('daily-sell-btn-area');
 
-  // 평단 계산
   const { totalQty, totalCost, avgCost } = calcAvgCost(items);
-  const locTarget = avgCost > 0 ? avgCost * 1.10 : 0;
+  const locTarget      = avgCost > 0 ? avgCost * 1.10 : 0;
   const expectedProfit = locTarget > 0 ? (locTarget * totalQty) - totalCost : 0;
 
-  // 대시보드 업데이트
-  document.getElementById('daily-avg-cost').innerText = avgCost > 0 ? `$${avgCost.toFixed(2)}` : '$--';
-  document.getElementById('daily-total-qty').innerText = totalQty > 0 ? `${totalQty}주` : '0주';
-  document.getElementById('daily-total-cost').innerText = totalCost > 0 ? `$${totalCost.toFixed(2)}` : '$--';
-  document.getElementById('daily-loc-target').innerText = locTarget > 0 ? `$${locTarget.toFixed(2)}` : '$--';
+  document.getElementById('daily-avg-cost').innerText    = avgCost > 0 ? `$${avgCost.toFixed(2)}` : '$--';
+  document.getElementById('daily-total-qty').innerText   = `${totalQty}주`;
+  document.getElementById('daily-total-cost').innerText  = totalCost > 0 ? `$${totalCost.toFixed(2)}` : '$--';
+  document.getElementById('daily-loc-target').innerText  = locTarget > 0 ? `$${locTarget.toFixed(2)}` : '$--';
 
-  // 예상 수익 프리뷰
-  if (expectedProfit > 0) {
-    document.getElementById('daily-profit-preview').innerText =
-      `전량 매도 시 예상 수익: +$${expectedProfit.toFixed(2)} (+10.0%) · 총 ${totalQty}주`;
-  } else {
-    document.getElementById('daily-profit-preview').innerText = '포지션 없음';
-  }
+  document.getElementById('daily-profit-preview').innerText = expectedProfit > 0
+    ? `전량 매도 시 예상 수익: +$${expectedProfit.toFixed(2)} (+10.0%) · 총 ${totalQty}주`
+    : '포지션 없음';
 
-  // 현재가 vs 목표 상태 바
   const statusBar = document.getElementById('daily-status-bar');
   if (currentPrice > 0 && locTarget > 0) {
-    const diff = ((currentPrice - locTarget) / locTarget * 100).toFixed(1);
+    const diff    = ((currentPrice - locTarget) / locTarget * 100).toFixed(1);
     const reached = currentPrice >= locTarget;
-    if (reached) {
-      statusBar.innerHTML = `<span style="color:var(--green);">🟢 현재가 $${currentPrice.toFixed(2)} — 목표가 도달! LOC 매도 실행 가능</span>`;
-    } else {
-      statusBar.innerHTML = `<span style="color:var(--red);">🔴 현재가 $${currentPrice.toFixed(2)} — 목표까지 ${Math.abs(diff)}% 남음</span>`;
-    }
-  } else if (items.length === 0) {
-    statusBar.innerHTML = `<span style="color:var(--text3);">포지션 없음</span>`;
+    statusBar.innerHTML = reached
+      ? `<span style="color:var(--green);">🟢 현재가 $${currentPrice.toFixed(2)} — 목표가 도달! LOC 매도 실행 가능</span>`
+      : `<span style="color:var(--red);">🔴 현재가 $${currentPrice.toFixed(2)} — 목표까지 ${Math.abs(diff)}% 남음</span>`;
   } else {
-    statusBar.innerHTML = `<span style="color:var(--text3);">시세를 불러온 후 상태 확인 가능</span>`;
+    statusBar.innerHTML = items.length === 0
+      ? `<span style="color:var(--text3);">포지션 없음</span>`
+      : `<span style="color:var(--text3);">시세를 불러온 후 상태 확인 가능</span>`;
   }
 
-  // 전량 매도 버튼
-  if (items.length > 0) {
-    btnArea.innerHTML = `
-      <button onclick="executeAllSell()" style="
+  btnArea.innerHTML = items.length > 0
+    ? `<button onclick="executeAllSell()" style="
         width:100%; padding:15px; margin-bottom:12px;
         background:linear-gradient(135deg,var(--green),#00b87a);
         border:none; border-radius:14px; color:#000;
         font-family:var(--font-body); font-weight:900; font-size:0.95rem;
         cursor:pointer; letter-spacing:0.5px;">
         ✅ LOC 전량 매도 체결 ($${locTarget.toFixed(2)})
-      </button>`;
-  } else {
-    btnArea.innerHTML = '';
-  }
+      </button>`
+    : '';
 
-  // 개별 리스트
   if (!items.length) {
     root.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div>LOC 매수 기록이 없습니다</div>`;
     return;
@@ -915,7 +1038,7 @@ function renderDaily() {
     <div class="card-title" style="margin-bottom:8px; padding:0 2px;">📋 개별 매수 내역 (${items.length}회)</div>
     ${[...items].reverse().map(i => {
       const amt = (parseFloat(i.p) * i.q).toFixed(2);
-      const wt = totalCost > 0 ? ((parseFloat(i.p) * i.q / totalCost) * 100).toFixed(1) : 0;
+      const wt  = totalCost > 0 ? ((parseFloat(i.p) * i.q / totalCost) * 100).toFixed(1) : 0;
       return `
         <div class="trade-item" style="border-left-color:var(--yellow); margin-bottom:8px;">
           <div class="trade-info">
@@ -930,14 +1053,14 @@ function renderDaily() {
 
 // ─── History ──────────────────────────────────────────────
 function renderHistory() {
-  const hist = S.getHistory().sort((a, b) => b.ts - a.ts);
-  const totalProfit = hist.reduce((s, h) => s + parseFloat(h.profit), 0);
-  const totalInvested = hist.reduce((s, h) => s + parseFloat(h.p) * h.q, 0);
-  const avgReturn = hist.length ? hist.reduce((s, h) => s + parseFloat(h.pct), 0) / hist.length : 0;
+  const hist         = S.getHistory().sort((a, b) => b.ts - a.ts);
+  const totalProfit  = hist.reduce((s, h) => s + parseFloat(h.profit), 0);
+  const totalInvested= hist.reduce((s, h) => s + parseFloat(h.p) * h.q, 0);
+  const avgReturn    = hist.length ? hist.reduce((s, h) => s + parseFloat(h.pct), 0) / hist.length : 0;
 
-  document.getElementById('total-profit').innerText = `$${totalProfit.toFixed(2)}`;
-  document.getElementById('total-trades').innerText = `${hist.length}회`;
-  document.getElementById('avg-return').innerText = `${avgReturn.toFixed(2)}%`;
+  document.getElementById('total-profit').innerText   = `$${totalProfit.toFixed(2)}`;
+  document.getElementById('total-trades').innerText   = `${hist.length}회`;
+  document.getElementById('avg-return').innerText     = `${avgReturn.toFixed(2)}%`;
   document.getElementById('total-invested').innerText = `$${totalInvested.toFixed(2)}`;
 
   const root = document.getElementById('history-list');
@@ -945,12 +1068,20 @@ function renderHistory() {
     root.innerHTML = `<div class="empty-state"><div class="empty-icon">💰</div>수익 기록이 없습니다</div>`;
     return;
   }
+
   root.innerHTML = hist.map(h => {
     const profitN = parseFloat(h.profit);
-    const isPos = profitN >= 0;
-    const stBadge = h.strategy === '10%'
-      ? `<span style="background:rgba(255,209,102,0.15);color:var(--yellow);border:1px solid rgba(255,209,102,0.3);padding:1px 6px;border-radius:10px;font-size:0.6rem;font-weight:700;margin-left:6px;">10%</span>`
-      : `<span style="background:rgba(79,142,247,0.15);color:var(--accent);border:1px solid rgba(79,142,247,0.3);padding:1px 6px;border-radius:10px;font-size:0.6rem;font-weight:700;margin-left:6px;">5%</span>`;
+    const isPos   = profitN >= 0;
+    const sign    = isPos ? '+' : '';
+
+    // 전략 배지
+    let stBadge = '';
+    if (h.strategy === '10%') {
+      stBadge = `<span style="background:rgba(255,209,102,0.15);color:var(--yellow);border:1px solid rgba(255,209,102,0.3);padding:1px 6px;border-radius:10px;font-size:0.6rem;font-weight:700;margin-left:6px;">10%</span>`;
+    } else {
+      stBadge = `<span style="background:rgba(79,142,247,0.15);color:var(--accent);border:1px solid rgba(79,142,247,0.3);padding:1px 6px;border-radius:10px;font-size:0.6rem;font-weight:700;margin-left:6px;">LOC</span>`;
+    }
+
     return `
       <div class="history-item">
         <div class="history-info">
@@ -960,10 +1091,10 @@ function renderHistory() {
         </div>
         <div class="history-profit">
           <div class="history-profit-amt" style="color:${isPos ? 'var(--green)' : 'var(--red)'}">
-            ${isPos ? '+' : ''}$${profitN.toFixed(2)}
+            ${sign}$${profitN.toFixed(2)}
           </div>
           <div class="history-profit-pct" style="color:${isPos ? 'var(--green)' : 'var(--red)'}">
-            ${isPos ? '+' : ''}${h.pct}%
+            ${sign}${h.pct}%
           </div>
         </div>
       </div>`;
@@ -974,19 +1105,19 @@ function exportCSV() {
   const hist = S.getHistory().sort((a, b) => b.ts - a.ts);
   if (!hist.length) return toast('수익 기록이 없습니다.');
 
-  const header = '날짜,종목,전략,매수가,수량,익절가,매수금액,매도금액,수익($),수익률(%)';
-  const rows = hist.map(h => {
-    const buyAmt = (parseFloat(h.p) * h.q).toFixed(2);
+  const header = '날짜,종목,전략,매수가,수량,매도가,매수금액,매도금액,수익($),수익률(%)';
+  const rows   = hist.map(h => {
+    const buyAmt  = (parseFloat(h.p) * h.q).toFixed(2);
     const sellAmt = (parseFloat(h.t) * h.q).toFixed(2);
     return `${h.date},${h.ticker},${h.strategy},${h.p},${h.q},${h.t},${buyAmt},${sellAmt},${h.profit},${h.pct}`;
   });
 
-  const csv = [header, ...rows].join('\n');
+  const csv  = [header, ...rows].join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `매도수익기록_${new Date().toLocaleDateString('ko-KR').replace(/\./g,'').replace(/ /g,'')}.csv`;
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `LOC매도기록_${new Date().toLocaleDateString('ko-KR').replace(/\./g,'').replace(/ /g,'')}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   toast('📥 CSV 다운로드 완료!');
