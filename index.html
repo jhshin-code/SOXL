@@ -381,6 +381,46 @@ body {
   font-family: var(--font-body); font-weight: 900; font-size: 0.88rem;
   padding: 13px; cursor: pointer;
 }
+
+/* ── 수익 기록 편집 모달 ── */
+.edit-modal-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(0,0,0,0.78);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.edit-modal-overlay.show { opacity: 1; pointer-events: all; }
+.edit-modal-overlay.show .modal-box { transform: translateY(0); }
+.edit-modal-overlay .modal-box { transform: translateY(16px); transition: transform 0.2s; }
+.edit-field-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;
+}
+.edit-field { display: flex; flex-direction: column; gap: 6px; }
+.edit-field label { font-size: 0.65rem; color: var(--text3); font-weight: 700; letter-spacing: 1px; }
+.edit-field input {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text);
+  padding: 11px 12px; font-size: 0.9rem;
+  font-family: var(--font-body); outline: none; width: 100%;
+}
+.edit-field input:focus { border-color: var(--yellow); }
+.edit-field input.sell-input:focus { border-color: var(--green); }
+.edit-preview-box {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: center;
+}
+.edit-preview-label { font-size: 0.65rem; color: var(--text3); font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+.edit-preview-profit { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: 1px; }
+.edit-preview-pct { font-size: 0.75rem; font-weight: 700; margin-top: 2px; }
+.edit-del-btn {
+  width: 100%; padding: 11px; margin-top: 6px;
+  background: none; border: 1px solid rgba(255,82,82,0.3);
+  border-radius: 12px; color: var(--red);
+  font-family: var(--font-body); font-weight: 700; font-size: 0.82rem;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -575,6 +615,42 @@ body {
       <button class="modal-btn-cancel" onclick="closeModal()">취소</button>
       <button class="modal-btn-confirm" onclick="confirmSell()">체결 확인</button>
     </div>
+  </div>
+</div>
+
+<!-- ── 수익 기록 편집 모달 ── -->
+<div class="edit-modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-title">✏️ 수익 기록 수정</div>
+    <div class="modal-sub">매도가 및 수량을 수정할 수 있습니다.</div>
+
+    <div class="edit-field-row">
+      <div class="edit-field">
+        <label>매수가 ($)</label>
+        <input type="number" id="e-buy" step="0.01" placeholder="매수가" oninput="updateEditPreview()">
+      </div>
+      <div class="edit-field">
+        <label>수량</label>
+        <input type="number" id="e-qty" placeholder="수량" oninput="updateEditPreview()">
+      </div>
+    </div>
+    <div class="edit-field" style="margin-bottom:14px;">
+      <label>매도가 ($) — 수정 대상</label>
+      <input type="number" id="e-sell" step="0.01" placeholder="매도가" class="sell-input" oninput="updateEditPreview()"
+        style="border-color:var(--green); font-size:1.05rem;">
+    </div>
+
+    <div class="edit-preview-box">
+      <div class="edit-preview-label">수정 후 손익</div>
+      <div class="edit-preview-profit" id="e-profit">--</div>
+      <div class="edit-preview-pct" id="e-pct">--</div>
+    </div>
+
+    <div class="modal-btns" style="margin-bottom:0;">
+      <button class="modal-btn-cancel" onclick="closeEditModal()">취소</button>
+      <button class="modal-btn-confirm" onclick="confirmEdit()">저장</button>
+    </div>
+    <button class="edit-del-btn" onclick="deleteHistoryItem()">🗑️ 이 기록 삭제</button>
   </div>
 </div>
 
@@ -1083,22 +1159,123 @@ function renderHistory() {
     }
 
     return `
-      <div class="history-item">
-        <div class="history-info">
-          <div class="history-ticker">${h.ticker} ${stBadge}</div>
-          <div class="history-detail">$${h.p} × ${h.q}주 → $${h.t}</div>
-          <div class="history-date">${h.date}</div>
-        </div>
-        <div class="history-profit">
-          <div class="history-profit-amt" style="color:${isPos ? 'var(--green)' : 'var(--red)'}">
-            ${sign}$${profitN.toFixed(2)}
+      <div class="history-item" style="flex-direction:column; align-items:stretch; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div class="history-info">
+            <div class="history-ticker">${h.ticker} ${stBadge}</div>
+            <div class="history-detail">$${h.p} × ${h.q}주 → $${h.t}</div>
+            <div class="history-date">${h.date}</div>
           </div>
-          <div class="history-profit-pct" style="color:${isPos ? 'var(--green)' : 'var(--red)'}">
-            ${sign}${h.pct}%
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+            <div class="history-profit">
+              <div class="history-profit-amt" style="color:${isPos ? 'var(--green)' : 'var(--red)'}">
+                ${sign}$${profitN.toFixed(2)}
+              </div>
+              <div class="history-profit-pct" style="color:${isPos ? 'var(--green)' : 'var(--red)'}; text-align:right;">
+                ${sign}${h.pct}%
+              </div>
+            </div>
+            <button onclick="openEditModal('${h.id}')" style="
+              background:rgba(79,142,247,0.12); border:1px solid rgba(79,142,247,0.3);
+              border-radius:8px; color:var(--accent);
+              font-family:var(--font-body); font-size:0.68rem; font-weight:700;
+              padding:4px 10px; cursor:pointer; white-space:nowrap;">
+              ✏️ 수정
+            </button>
           </div>
         </div>
       </div>`;
   }).join('');
+}
+
+// ─── 수익 기록 편집 모달 ──────────────────────────────────
+let _editItemId = null;
+
+function openEditModal(id) {
+  // id는 문자열로 전달되므로 숫자 변환
+  const hist = S.getHistory();
+  const item = hist.find(h => String(h.id) === String(id));
+  if (!item) return;
+
+  _editItemId = item.id;
+
+  document.getElementById('e-buy').value  = item.p;
+  document.getElementById('e-qty').value  = item.q;
+  document.getElementById('e-sell').value = item.t;
+
+  updateEditPreview();
+  document.getElementById('editModal').classList.add('show');
+  document.getElementById('e-sell').focus();
+}
+
+function updateEditPreview() {
+  const buyP   = parseFloat(document.getElementById('e-buy').value);
+  const qty    = parseInt(document.getElementById('e-qty').value);
+  const sellP  = parseFloat(document.getElementById('e-sell').value);
+  const profEl = document.getElementById('e-profit');
+  const pctEl  = document.getElementById('e-pct');
+
+  if (!buyP || !qty || !sellP) {
+    profEl.innerText = '--';
+    profEl.style.color = 'var(--text3)';
+    pctEl.innerText  = '--';
+    pctEl.style.color = 'var(--text3)';
+    return;
+  }
+
+  const profit = (sellP - buyP) * qty;
+  const pct    = ((profit / (buyP * qty)) * 100).toFixed(2);
+  const sign   = profit >= 0 ? '+' : '';
+  const color  = profit >= 0 ? 'var(--green)' : 'var(--red)';
+
+  profEl.innerText   = `${sign}$${profit.toFixed(2)}`;
+  profEl.style.color = color;
+  pctEl.innerText    = `${sign}${pct}%`;
+  pctEl.style.color  = color;
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('show');
+  _editItemId = null;
+}
+
+function confirmEdit() {
+  const hist = S.getHistory();
+  const idx  = hist.findIndex(h => String(h.id) === String(_editItemId));
+  if (idx === -1) return closeEditModal();
+
+  const buyP  = parseFloat(document.getElementById('e-buy').value);
+  const qty   = parseInt(document.getElementById('e-qty').value);
+  const sellP = parseFloat(document.getElementById('e-sell').value);
+
+  if (!buyP || buyP <= 0) { document.getElementById('e-buy').style.borderColor = 'var(--red)'; return; }
+  if (!qty  || qty  <= 0) { document.getElementById('e-qty').style.borderColor = 'var(--red)'; return; }
+  if (!sellP|| sellP<= 0) { document.getElementById('e-sell').style.borderColor= 'var(--red)'; return; }
+
+  const profit = (sellP - buyP) * qty;
+  const pct    = ((profit / (buyP * qty)) * 100).toFixed(2);
+
+  hist[idx] = {
+    ...hist[idx],
+    p:      buyP.toFixed(2),
+    q:      qty,
+    t:      sellP.toFixed(2),
+    profit: profit.toFixed(2),
+    pct,
+  };
+  S.setHistory(hist);
+  closeEditModal();
+  renderHistory();
+  toast('✅ 수익 기록 수정 완료');
+}
+
+function deleteHistoryItem() {
+  if (!confirm('이 수익 기록을 삭제합니까?')) return;
+  const hist = S.getHistory().filter(h => String(h.id) !== String(_editItemId));
+  S.setHistory(hist);
+  closeEditModal();
+  renderHistory();
+  toast('🗑️ 기록 삭제됨');
 }
 
 function exportCSV() {
