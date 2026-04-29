@@ -554,13 +554,41 @@ body {
 
     <div class="card">
       <div class="card-title">📅 LOC 매수 기록 추가 (전날 종가 기준)</div>
-      <div style="display:grid; grid-template-columns:1fr 80px 80px 44px; gap:8px; align-items:center;">
-        <input type="date" id="d-date" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 10px;font-size:0.82rem;font-family:var(--font-body);outline:none;">
-        <input type="number" id="d-p" step="0.01" placeholder="종가($)" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 10px;font-size:0.82rem;font-family:var(--font-body);outline:none;width:100%;">
-        <input type="number" id="d-q" placeholder="수량" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 10px;font-size:0.82rem;font-family:var(--font-body);outline:none;width:100%;">
+
+      <!-- 날짜 선택 + 자동 종가 조회 -->
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <input type="date" id="d-date"
+          onchange="fetchDailyClose()"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 10px;font-size:0.82rem;font-family:var(--font-body);outline:none;">
+        <button onclick="fetchDailyClose()" style="
+          background:var(--surface2);border:1px solid var(--border);
+          border-radius:10px;color:var(--text2);
+          font-family:var(--font-body);font-size:0.75rem;font-weight:700;
+          padding:11px 12px;cursor:pointer;white-space:nowrap;">
+          <span id="d-fetch-icon">🔍</span> 종가 조회
+        </button>
+      </div>
+
+      <!-- 종가 자동입력 상태 -->
+      <div id="d-close-status" style="
+        font-size:0.72rem; color:var(--text3);
+        background:var(--surface2); border:1px solid var(--border);
+        border-radius:10px; padding:9px 12px; margin-bottom:8px;
+        min-height:36px; display:flex; align-items:center; gap:6px;">
+        날짜를 선택하면 종가를 자동으로 불러옵니다
+      </div>
+
+      <!-- 종가 + 수량 + 추가버튼 -->
+      <div style="display:grid; grid-template-columns:1fr 80px 44px; gap:8px; align-items:center;">
+        <input type="number" id="d-p" step="0.01" placeholder="종가 ($)"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 10px;font-size:0.9rem;font-family:var(--font-body);outline:none;width:100%;">
+        <input type="number" id="d-q" placeholder="수량"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 10px;font-size:0.9rem;font-family:var(--font-body);outline:none;width:100%;">
         <button onclick="addDaily()" style="background:linear-gradient(135deg,var(--yellow),#ffb700);color:#000;border:none;border-radius:10px;font-weight:900;font-size:1.2rem;cursor:pointer;height:44px;width:44px;">+</button>
       </div>
-      <div style="font-size:0.65rem;color:var(--text3);margin-top:6px;">날짜는 매수 실행일 (전날 종가 LOC = 당일 장 시작 전 예약)</div>
+      <div style="font-size:0.65rem;color:var(--text3);margin-top:6px;">
+        종가 자동조회 후 수량만 입력하고 + 버튼을 누르세요. 수동 입력도 가능합니다.
+      </div>
     </div>
 
     <div id="daily-sell-btn-area"></div>
@@ -697,16 +725,19 @@ function selectTicker(ticker, btn) {
   if (btn) btn.classList.add('active');
   document.getElementById('tickerDisplay').innerText = ticker;
   document.getElementById('customTicker').value = '';
+  // 날짜 종가 캐시 무효화 후 재조회
+  _closeCache = {};
   fetchStockPrice(); render(); renderDaily();
 }
 
 function addCustomTicker() {
-  const input = document.getElementById('customTicker');
+  const input  = document.getElementById('customTicker');
   const ticker = input.value.trim().toUpperCase();
   if (!ticker) return alert('티커를 입력하세요.');
   currentTicker = ticker;
   document.querySelectorAll('.ticker-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tickerDisplay').innerText = ticker;
+  _closeCache = {};
   fetchStockPrice(); render(); renderDaily();
 }
 
@@ -987,7 +1018,99 @@ function calcAvgCost(items) {
 function initDailyDateInput() {
   const el = document.getElementById('d-date');
   if (el && !el.value) {
-    el.value = new Date().toISOString().split('T')[0];
+    // 기본값: 오늘 (주말이면 금요일로)
+    const today = new Date();
+    const day   = today.getDay();
+    if (day === 0) today.setDate(today.getDate() - 2); // 일요일 → 금요일
+    if (day === 6) today.setDate(today.getDate() - 1); // 토요일 → 금요일
+    el.value = today.toISOString().split('T')[0];
+    fetchDailyClose(); // 기본 날짜 종가 자동 조회
+  }
+}
+
+// ─── 날짜별 종가 자동 조회 ────────────────────────────────
+// Yahoo Finance 1개월 일봉 데이터에서 선택한 날짜의 종가를 찾는다
+let _closeCache = {}; // { 'SOXL': { '2025-04-22': 23.45, ... } }
+
+async function fetchDailyClose() {
+  const dateEl   = document.getElementById('d-date');
+  const priceEl  = document.getElementById('d-p');
+  const statusEl = document.getElementById('d-close-status');
+  const iconEl   = document.getElementById('d-fetch-icon');
+  const dateVal  = dateEl.value;
+
+  if (!dateVal) return;
+
+  // 캐시 확인
+  const cacheKey = currentTicker;
+  if (_closeCache[cacheKey] && _closeCache[cacheKey][dateVal] !== undefined) {
+    const c = _closeCache[cacheKey][dateVal];
+    _applyCloseResult(c, dateVal, statusEl, priceEl);
+    return;
+  }
+
+  // 로딩 상태
+  iconEl.classList.add('spinning');
+  statusEl.style.color = 'var(--text3)';
+  statusEl.innerHTML   = '<span class="spinning">🔄</span> 종가 조회 중...';
+
+  // Yahoo Finance: 최근 14일 일봉
+  const proxies = [
+    async () => {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1mo`;
+      const r   = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+      return (await r.json()).chart.result[0];
+    },
+    async () => {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${currentTicker}?interval=1d&range=1mo`;
+      const r   = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+      return JSON.parse((await r.json()).contents).chart.result[0];
+    },
+  ];
+
+  let result = null;
+  for (const fn of proxies) {
+    try { result = await fn(); if (result) break; } catch {}
+  }
+
+  iconEl.classList.remove('spinning');
+
+  if (!result) {
+    statusEl.style.color = 'var(--red)';
+    statusEl.innerHTML   = '⚠️ 종가 조회 실패 — 직접 입력하세요';
+    return;
+  }
+
+  // timestamps → YYYY-MM-DD 매핑
+  const timestamps = result.timestamp;
+  const closes     = result.indicators.quote[0].close;
+  const map        = {};
+  timestamps.forEach((ts, i) => {
+    if (closes[i] == null) return;
+    // UTC 기준 날짜 문자열 (Yahoo는 UTC 00:00 기준)
+    const d = new Date(ts * 1000);
+    const yyyy = d.getUTCFullYear();
+    const mm   = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd   = String(d.getUTCDate()).padStart(2, '0');
+    map[`${yyyy}-${mm}-${dd}`] = closes[i];
+  });
+
+  // 캐시 저장
+  _closeCache[cacheKey] = { ...(_closeCache[cacheKey] || {}), ...map };
+
+  _applyCloseResult(map[dateVal], dateVal, statusEl, priceEl);
+}
+
+function _applyCloseResult(closePrice, dateVal, statusEl, priceEl) {
+  if (closePrice !== undefined && closePrice !== null) {
+    priceEl.value         = closePrice.toFixed(2);
+    statusEl.style.color  = 'var(--green)';
+    statusEl.innerHTML    = `✅ ${dateVal} 종가: <strong style="color:var(--green);font-size:1rem;">$${closePrice.toFixed(2)}</strong> (자동 입력됨)`;
+  } else {
+    // 해당 날짜 없음 (주말·공휴일 등)
+    priceEl.value         = '';
+    statusEl.style.color  = 'var(--yellow)';
+    statusEl.innerHTML    = `⚠️ ${dateVal} 종가 없음 (휴장일). 직접 입력하거나 날짜를 바꾸세요.`;
   }
 }
 
